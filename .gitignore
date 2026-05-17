@@ -1,0 +1,23 @@
+# Runtime data
+uploads/*
+results/*
+job_outputs/*
+!uploads/.gitkeep
+!results/.gitkeep
+!job_outputs/.gitkeep
+
+# Environment & secrets
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Database
+spinnaker.db
+
+# Logs
+celery.log
+celery.pid
