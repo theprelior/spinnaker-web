@@ -1,0 +1,209 @@
+[2026-05-15 11:38:56,072: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-15 11:38:56,079: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-15 11:38:57,100: INFO/MainProcess] mingle: all alone
+[2026-05-15 11:38:57,156: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-15 11:57:33,132: ERROR/MainProcess] Received unregistered task of type 'tasks.run_script'.
+The message has been ignored and discarded.
+
+Did you remember to import the module containing this task?
+Or maybe you're using relative imports?
+
+Please see
+https://docs.celeryq.dev/en/latest/internals/protocol.html
+for more information.
+
+The full contents of the message body was:
+b'[["6da5d1fc-c2f7-448d-a20e-29d6fa0cc071", "/home/theprelior/Desktop/spinnaker-web/uploads/6da5d1fc-c2f7-448d-a20e-29d6fa0cc071.py"], {}, {"callbacks": null, "errbacks": null, "chain": null, "chord": null}]' (205b)
+
+The full contents of the message headers:
+{'lang': 'py', 'task': 'tasks.run_script', 'id': 'eb765271-f5a8-4fcd-8636-b9c08a7f3503', 'shadow': None, 'eta': None, 'expires': None, 'group': None, 'group_index': None, 'retries': 0, 'timelimit': [None, None], 'root_id': 'eb765271-f5a8-4fcd-8636-b9c08a7f3503', 'parent_id': None, 'argsrepr': "['6da5d1fc-c2f7-448d-a20e-29d6fa0cc071', '/home/theprelior/Desktop/spinnaker-web/uploads/6da5d1fc-c2f7-448d-a20e-29d6fa0cc071.py']", 'kwargsrepr': '{}', 'origin': 'gen20493@theprelior-Nitro', 'ignore_result': False, 'replaced_task_nesting': 0, 'stamped_headers': None, 'stamps': {}}
+
+The delivery info for this task is:
+{'exchange': '', 'routing_key': 'celery'}
+Traceback (most recent call last):
+  File "/home/theprelior/Desktop/spinnaker-web/.venv/lib/python3.12/site-packages/celery/worker/consumer/consumer.py", line 668, in on_task_received
+    strategy = strategies[type_]
+               ~~~~~~~~~~^^^^^^^
+KeyError: 'tasks.run_script'
+[2026-05-15 20:05:55,789: ERROR/MainProcess] consumer: Cannot connect to redis://localhost:6379/0: Error 111 connecting to localhost:6379. Connection refused..
+Trying again in 2.00 seconds... (1/100)
+
+[2026-05-15 20:05:57,792: ERROR/MainProcess] consumer: Cannot connect to redis://localhost:6379/0: Error 111 connecting to localhost:6379. Connection refused..
+Trying again in 4.00 seconds... (2/100)
+
+[2026-05-15 20:06:01,795: ERROR/MainProcess] consumer: Cannot connect to redis://localhost:6379/0: Error 111 connecting to localhost:6379. Connection refused..
+Trying again in 6.00 seconds... (3/100)
+
+[2026-05-15 20:06:07,799: ERROR/MainProcess] consumer: Cannot connect to redis://localhost:6379/0: Error 111 connecting to localhost:6379. Connection refused..
+Trying again in 8.00 seconds... (4/100)
+
+[2026-05-15 20:06:15,804: ERROR/MainProcess] consumer: Cannot connect to redis://localhost:6379/0: Error 111 connecting to localhost:6379. Connection refused..
+Trying again in 10.00 seconds... (5/100)
+
+[2026-05-15 20:06:25,809: ERROR/MainProcess] consumer: Cannot connect to redis://localhost:6379/0: Error 111 connecting to localhost:6379. Connection refused..
+Trying again in 12.00 seconds... (6/100)
+
+[2026-05-15 20:06:37,813: ERROR/MainProcess] consumer: Cannot connect to redis://localhost:6379/0: Error 111 connecting to localhost:6379. Connection refused..
+Trying again in 14.00 seconds... (7/100)
+
+[2026-05-15 20:06:51,833: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-15 20:06:51,844: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-15 20:06:52,860: INFO/MainProcess] mingle: all alone
+[2026-05-15 20:06:52,905: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 20:37:24,475: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-16 20:37:24,479: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-16 20:37:25,492: INFO/MainProcess] mingle: all alone
+[2026-05-16 20:37:25,550: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 20:37:25,556: ERROR/MainProcess] Received unregistered task of type 'tasks.run_script'.
+The message has been ignored and discarded.
+
+Did you remember to import the module containing this task?
+Or maybe you're using relative imports?
+
+Please see
+https://docs.celeryq.dev/en/latest/internals/protocol.html
+for more information.
+
+The full contents of the message body was:
+b'[["b4f85b0e-8f9c-4328-a38d-a203e8d9c7a2", "/home/theprelior/Desktop/spinnaker-web/uploads/b4f85b0e-8f9c-4328-a38d-a203e8d9c7a2.py", 2], {}, {"callbacks": null, "errbacks": null, "chain": null, "chord": null}]' (208b)
+
+The full contents of the message headers:
+{'lang': 'py', 'task': 'tasks.run_script', 'id': '6a13210e-6cdb-4a1f-aa98-bc88f0fc6edb', 'shadow': None, 'eta': None, 'expires': None, 'group': None, 'group_index': None, 'retries': 0, 'timelimit': [None, None], 'root_id': '6a13210e-6cdb-4a1f-aa98-bc88f0fc6edb', 'parent_id': None, 'argsrepr': "['b4f85b0e-8f9c-4328-a38d-a203e8d9c7a2', '/home/theprelior/Desktop/spinnaker-web/uploads/b4f85b0e-8f9c-4328-a38d-a203e8d9c7a2.py', 2]", 'kwargsrepr': '{}', 'origin': 'gen291341@theprelior-Nitro', 'ignore_result': False, 'replaced_task_nesting': 0, 'stamped_headers': None, 'stamps': {}}
+
+The delivery info for this task is:
+{'exchange': '', 'routing_key': 'celery'}
+Traceback (most recent call last):
+  File "/home/theprelior/Desktop/spinnaker-web/.venv/lib/python3.12/site-packages/celery/worker/consumer/consumer.py", line 668, in on_task_received
+    strategy = strategies[type_]
+               ~~~~~~~~~~^^^^^^^
+KeyError: 'tasks.run_script'
+[2026-05-16 20:37:25,569: ERROR/MainProcess] Received unregistered task of type 'tasks.run_script'.
+The message has been ignored and discarded.
+
+Did you remember to import the module containing this task?
+Or maybe you're using relative imports?
+
+Please see
+https://docs.celeryq.dev/en/latest/internals/protocol.html
+for more information.
+
+The full contents of the message body was:
+b'[["bd92e6af-b683-4422-be6e-86c8831be6b1", "/home/theprelior/Desktop/spinnaker-web/uploads/bd92e6af-b683-4422-be6e-86c8831be6b1.py", 2], {}, {"callbacks": null, "errbacks": null, "chain": null, "chord": null}]' (208b)
+
+The full contents of the message headers:
+{'lang': 'py', 'task': 'tasks.run_script', 'id': '133bff0b-253d-47df-8152-58aa6ca2e996', 'shadow': None, 'eta': None, 'expires': None, 'group': None, 'group_index': None, 'retries': 0, 'timelimit': [None, None], 'root_id': '133bff0b-253d-47df-8152-58aa6ca2e996', 'parent_id': None, 'argsrepr': "['bd92e6af-b683-4422-be6e-86c8831be6b1', '/home/theprelior/Desktop/spinnaker-web/uploads/bd92e6af-b683-4422-be6e-86c8831be6b1.py', 2]", 'kwargsrepr': '{}', 'origin': 'gen291341@theprelior-Nitro', 'ignore_result': False, 'replaced_task_nesting': 0, 'stamped_headers': None, 'stamps': {}}
+
+The delivery info for this task is:
+{'exchange': '', 'routing_key': 'celery'}
+Traceback (most recent call last):
+  File "/home/theprelior/Desktop/spinnaker-web/.venv/lib/python3.12/site-packages/celery/worker/consumer/consumer.py", line 668, in on_task_received
+    strategy = strategies[type_]
+               ~~~~~~~~~~^^^^^^^
+KeyError: 'tasks.run_script'
+[2026-05-16 20:46:17,112: ERROR/MainProcess] Received unregistered task of type 'tasks.run_script'.
+The message has been ignored and discarded.
+
+Did you remember to import the module containing this task?
+Or maybe you're using relative imports?
+
+Please see
+https://docs.celeryq.dev/en/latest/internals/protocol.html
+for more information.
+
+The full contents of the message body was:
+b'[["2855d29e-e718-454f-a388-797a36c370f6", "/home/theprelior/Desktop/spinnaker-web/uploads/2855d29e-e718-454f-a388-797a36c370f6.py", 2], {}, {"callbacks": null, "errbacks": null, "chain": null, "chord": null}]' (208b)
+
+The full contents of the message headers:
+{'lang': 'py', 'task': 'tasks.run_script', 'id': '9c86d2d4-8e32-4cb9-a2d1-0664c5883874', 'shadow': None, 'eta': None, 'expires': None, 'group': None, 'group_index': None, 'retries': 0, 'timelimit': [None, None], 'root_id': '9c86d2d4-8e32-4cb9-a2d1-0664c5883874', 'parent_id': None, 'argsrepr': "['2855d29e-e718-454f-a388-797a36c370f6', '/home/theprelior/Desktop/spinnaker-web/uploads/2855d29e-e718-454f-a388-797a36c370f6.py', 2]", 'kwargsrepr': '{}', 'origin': 'gen45348@theprelior-Nitro', 'ignore_result': False, 'replaced_task_nesting': 0, 'stamped_headers': None, 'stamps': {}}
+
+The delivery info for this task is:
+{'exchange': '', 'routing_key': 'celery'}
+Traceback (most recent call last):
+  File "/home/theprelior/Desktop/spinnaker-web/.venv/lib/python3.12/site-packages/celery/worker/consumer/consumer.py", line 668, in on_task_received
+    strategy = strategies[type_]
+               ~~~~~~~~~~^^^^^^^
+KeyError: 'tasks.run_script'
+[2026-05-16 20:47:13,539: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-16 20:47:13,543: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-16 20:47:14,558: INFO/MainProcess] mingle: all alone
+[2026-05-16 20:47:14,586: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 20:48:00,776: INFO/MainProcess] Task tasks.run_script[b1c662b5-b7ca-4d24-a60a-cfe5a3a9eaf2] received
+[2026-05-16 20:48:00,818: INFO/ForkPoolWorker-1] Task tasks.run_script[b1c662b5-b7ca-4d24-a60a-cfe5a3a9eaf2] succeeded in 0.04081968999525998s: None
+[2026-05-16 20:48:21,068: INFO/MainProcess] Task tasks.run_script[4db7f904-c2ed-4f77-b6fa-5a46e3c5a17d] received
+[2026-05-16 20:48:21,103: INFO/ForkPoolWorker-1] Task tasks.run_script[4db7f904-c2ed-4f77-b6fa-5a46e3c5a17d] succeeded in 0.034005162997345906s: None
+[2026-05-16 20:48:58,713: INFO/MainProcess] Task tasks.run_script[893b655b-c224-489c-882c-fa398f3559a6] received
+[2026-05-16 20:48:58,755: INFO/ForkPoolWorker-1] Task tasks.run_script[893b655b-c224-489c-882c-fa398f3559a6] succeeded in 0.04024426300020423s: None
+[2026-05-16 20:49:18,490: INFO/MainProcess] Task tasks.run_script[a73caaab-ab88-46a3-9874-edfad9116e74] received
+[2026-05-16 20:49:18,534: INFO/ForkPoolWorker-1] Task tasks.run_script[a73caaab-ab88-46a3-9874-edfad9116e74] succeeded in 0.0425380739980028s: None
+[2026-05-16 20:49:24,101: INFO/MainProcess] Task tasks.run_script[63cf4684-1b2d-4825-9258-45e3c22abfe1] received
+[2026-05-16 20:49:24,153: INFO/ForkPoolWorker-1] Task tasks.run_script[63cf4684-1b2d-4825-9258-45e3c22abfe1] succeeded in 0.05062686200108146s: None
+[2026-05-16 20:53:55,349: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-16 20:53:55,352: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-16 20:53:56,364: INFO/MainProcess] mingle: all alone
+[2026-05-16 20:53:56,383: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 20:54:05,344: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-16 20:54:05,349: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-16 20:54:06,362: INFO/MainProcess] mingle: all alone
+[2026-05-16 20:54:06,395: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 20:54:15,304: INFO/MainProcess] Task tasks.run_script[08543a75-10ec-490b-97ba-81d2b1db13fa] received
+[2026-05-16 20:54:15,339: INFO/ForkPoolWorker-1] Task tasks.run_script[08543a75-10ec-490b-97ba-81d2b1db13fa] succeeded in 0.033299269001872744s: None
+[2026-05-16 20:55:12,048: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-16 20:55:12,052: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-16 20:55:13,065: INFO/MainProcess] mingle: all alone
+[2026-05-16 20:55:13,092: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 20:55:13,095: INFO/MainProcess] Task tasks.run_script[937ecdef-a113-49bc-91f3-5aad5efc9938] received
+[2026-05-16 20:55:13,178: INFO/ForkPoolWorker-1] Task tasks.run_script[937ecdef-a113-49bc-91f3-5aad5efc9938] succeeded in 0.08191642899328144s: None
+[2026-05-16 20:56:06,433: INFO/MainProcess] Task tasks.run_script[d0e03fdc-9c9b-43cb-bdd8-2a4aafb2ef77] received
+[2026-05-16 20:56:07,079: INFO/ForkPoolWorker-1] Task tasks.run_script[d0e03fdc-9c9b-43cb-bdd8-2a4aafb2ef77] succeeded in 0.6447233040016727s: None
+[2026-05-16 20:56:44,599: INFO/MainProcess] Task tasks.run_script[c48e4d35-c3f3-43c6-be3b-511929e71360] received
+[2026-05-16 20:56:45,026: INFO/ForkPoolWorker-1] Task tasks.run_script[c48e4d35-c3f3-43c6-be3b-511929e71360] succeeded in 0.42615515099896584s: None
+[2026-05-16 20:58:22,328: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-16 20:58:22,332: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-16 20:58:23,354: INFO/MainProcess] mingle: all alone
+[2026-05-16 20:58:23,385: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 20:58:31,477: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-16 20:58:31,481: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-16 20:58:32,495: INFO/MainProcess] mingle: all alone
+[2026-05-16 20:58:32,529: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 20:59:45,521: INFO/MainProcess] Task tasks.run_script[89e719a3-7111-49a1-bec9-16eb2d6b3a72] received
+[2026-05-16 20:59:45,933: INFO/ForkPoolWorker-1] Task tasks.run_script[89e719a3-7111-49a1-bec9-16eb2d6b3a72] succeeded in 0.41049523100082297s: None
+[2026-05-16 21:01:10,846: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-16 21:01:10,850: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-16 21:01:11,864: INFO/MainProcess] mingle: all alone
+[2026-05-16 21:01:11,895: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 21:01:24,143: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-16 21:01:24,147: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-16 21:01:25,160: INFO/MainProcess] mingle: all alone
+[2026-05-16 21:01:25,191: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 21:02:02,164: INFO/MainProcess] Task tasks.run_script[f29da0e4-4cae-45a3-b4fc-cca8f0230b21] received
+[2026-05-16 21:17:28,223: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-16 21:17:28,231: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-16 21:17:29,244: INFO/MainProcess] mingle: all alone
+[2026-05-16 21:17:29,264: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 21:17:29,267: INFO/MainProcess] Task tasks.run_script[4cfbaa7d-9280-4886-b984-2e9563c89338] received
+[2026-05-16 21:17:29,313: INFO/ForkPoolWorker-1] Task tasks.run_script[4cfbaa7d-9280-4886-b984-2e9563c89338] succeeded in 0.04480526899715187s: None
+[2026-05-16 21:17:29,318: INFO/MainProcess] Task tasks.run_script[816050fc-9cb6-46dd-adf2-e8f3f0299ad1] received
+[2026-05-16 21:17:29,359: INFO/ForkPoolWorker-1] Task tasks.run_script[816050fc-9cb6-46dd-adf2-e8f3f0299ad1] succeeded in 0.04007104199990863s: None
+[2026-05-16 21:17:29,363: INFO/MainProcess] Task tasks.run_script[6c4807de-06bd-499f-9bf8-ad5f04916fa0] received
+[2026-05-16 21:17:29,401: INFO/ForkPoolWorker-1] Task tasks.run_script[6c4807de-06bd-499f-9bf8-ad5f04916fa0] succeeded in 0.03685384799609892s: None
+[2026-05-16 21:17:29,404: INFO/MainProcess] Task tasks.run_script[a0595727-0237-4380-ba71-e8e87d6657d0] received
+[2026-05-16 21:17:30,459: INFO/ForkPoolWorker-1] Task tasks.run_script[a0595727-0237-4380-ba71-e8e87d6657d0] succeeded in 1.054658032997395s: None
+[2026-05-16 21:17:30,463: INFO/MainProcess] Task tasks.run_script[3e85ec45-325c-452b-a4d9-4713e9df5fea] received
+[2026-05-16 21:17:30,506: INFO/ForkPoolWorker-1] Task tasks.run_script[3e85ec45-325c-452b-a4d9-4713e9df5fea] succeeded in 0.04066588500427315s: None
+[2026-05-16 21:20:01,901: INFO/MainProcess] Task tasks.run_script[5e8d2191-8bfe-4f79-8e01-39978427d0df] received
+[2026-05-16 21:20:01,936: INFO/ForkPoolWorker-1] Task tasks.run_script[5e8d2191-8bfe-4f79-8e01-39978427d0df] succeeded in 0.03441713000211166s: None
+[2026-05-16 21:20:14,726: INFO/MainProcess] Task tasks.run_script[64644064-7ef8-412b-835a-47e35402ace4] received
+[2026-05-16 21:20:18,473: INFO/ForkPoolWorker-1] Task tasks.run_script[64644064-7ef8-412b-835a-47e35402ace4] succeeded in 3.7458225499940454s: None
+[2026-05-16 22:02:18,692: INFO/MainProcess] Task tasks.run_script[f29da0e4-4cae-45a3-b4fc-cca8f0230b21] received
+[2026-05-16 22:07:54,503: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-16 22:07:54,507: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-16 22:07:55,519: INFO/MainProcess] mingle: all alone
+[2026-05-16 22:07:55,554: INFO/MainProcess] celery@theprelior-Nitro ready.
+[2026-05-16 22:09:45,378: INFO/MainProcess] Task tasks.run_script[6343aa40-1ec8-47f6-a292-9f887c53c33c] received
+[2026-05-16 22:09:45,421: INFO/ForkPoolWorker-1] Task tasks.run_script[6343aa40-1ec8-47f6-a292-9f887c53c33c] succeeded in 0.041607402003137395s: None
+[2026-05-16 22:11:05,618: INFO/MainProcess] Task tasks.run_script[f5e99fdc-a5a7-455e-a40a-99e2fc9929f5] received
+[2026-05-16 22:11:05,669: INFO/ForkPoolWorker-1] Task tasks.run_script[f5e99fdc-a5a7-455e-a40a-99e2fc9929f5] succeeded in 0.049731792001693975s: None
+[2026-05-16 22:17:37,177: INFO/MainProcess] Task tasks.run_script[a2cd3973-85b5-4d9b-927e-a5081aabed92] received
+[2026-05-16 22:17:37,216: INFO/ForkPoolWorker-1] Task tasks.run_script[a2cd3973-85b5-4d9b-927e-a5081aabed92] succeeded in 0.03806148799776565s: None
+[2026-05-16 22:17:38,040: INFO/MainProcess] Task tasks.run_script[5f5548b6-f6c6-42dc-bf15-2c71e13c3bb7] received
+[2026-05-16 22:17:38,092: INFO/ForkPoolWorker-1] Task tasks.run_script[5f5548b6-f6c6-42dc-bf15-2c71e13c3bb7] succeeded in 0.050252611996256746s: None

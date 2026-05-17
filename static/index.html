@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpiNNaker2 Playground</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--surface:#161b22;--border:#30363d;--border2:#21262d;
+  --text:#e6edf3;--muted:#8b949e;--blue:#58a6ff;--green:#3fb950;
+  --red:#f85149;--yellow:#e3b341;--purple:#bc8cff;
+  --sidebar-w:230px;--header-h:52px;--toolbar-h:44px;--term-h:220px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden}
+
+/* ── Auth overlay ── */
+#auth-overlay{
+  position:fixed;inset:0;background:#000a;display:flex;
+  align-items:center;justify-content:center;z-index:1000
+}
+.auth-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:32px 36px;width:360px;max-width:92vw
+}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.auth-logo .icon{width:36px;height:36px;background:linear-gradient(135deg,#58a6ff,#3fb950);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.auth-logo h2{font-size:16px;font-weight:700}
+.auth-logo p{font-size:11px;color:var(--muted)}
+.auth-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)}
+.auth-tab{
+  flex:1;padding:8px;text-align:center;cursor:pointer;font-size:13px;font-weight:500;
+  color:var(--muted);border-bottom:2px solid transparent;transition:.15s
+}
+.auth-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.auth-form{display:none;flex-direction:column;gap:12px}
+.auth-form.active{display:flex}
+.auth-form label{font-size:12px;color:var(--muted);margin-bottom:2px}
+.auth-form input{
+  background:#0d1117;border:1px solid var(--border);border-radius:6px;
+  color:var(--text);padding:8px 12px;font-size:13px;width:100%;outline:none;transition:.15s
+}
+.auth-form input:focus{border-color:var(--blue)}
+.auth-err{font-size:12px;color:var(--red);min-height:16px}
+.btn-auth{
+  background:var(--blue);color:#fff;border:none;border-radius:6px;
+  padding:10px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;margin-top:4px
+}
+.btn-auth:hover{filter:brightness(1.1)}
+.btn-auth:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Layout ── */
+#app{height:100%;display:flex;flex-direction:column}
+header{
+  height:var(--header-h);flex-shrink:0;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:12px
+}
+.h-logo{width:28px;height:28px;background:linear-gradient(135deg,#58a6ff,#3fb950);
+  border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.h-title{font-size:15px;font-weight:700}
+.h-sep{flex:1}
+.h-user{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.h-user span{color:var(--text);font-weight:600}
+.h-btn{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;transition:.15s
+}
+.h-btn:hover{border-color:var(--muted);color:var(--text)}
+
+.workspace{flex:1;display:flex;min-height:0}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden
+}
+.sidebar-section{padding:10px 10px 4px;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.sidebar-list{overflow-y:auto;flex:1}
+.sidebar-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 12px;cursor:pointer;font-size:12px;transition:.1s;
+  border-left:2px solid transparent
+}
+.sidebar-item:hover{background:#1c2128;color:var(--text)}
+.sidebar-item.active{background:#1c2128;border-left-color:var(--blue);color:var(--blue)}
+.sidebar-item .si-icon{font-size:13px;flex-shrink:0}
+.sidebar-item .si-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-item .si-del{
+  display:none;background:none;border:none;color:var(--red);
+  cursor:pointer;font-size:13px;padding:0 2px;line-height:1
+}
+.sidebar-item:hover .si-del{display:block}
+.sidebar-divider{border:none;border-top:1px solid var(--border2);margin:6px 0}
+.sidebar-empty{padding:12px;font-size:11px;color:var(--muted);text-align:center}
+.sidebar-new{
+  padding:8px 12px;
+  border-top:1px solid var(--border)
+}
+.btn-new{
+  width:100%;background:none;border:1px dashed var(--border);
+  color:var(--muted);border-radius:6px;padding:6px;font-size:12px;
+  cursor:pointer;transition:.15s
+}
+.btn-new:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ── Editor panel ── */
+.editor-panel{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+
+/* Toolbar */
+.toolbar{
+  height:var(--toolbar-h);flex-shrink:0;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;padding:0 12px
+}
+.filename-input{
+  background:#0d1117;border:1px solid var(--border);border-radius:5px;
+  color:var(--text);padding:4px 8px;font-size:12px;width:160px;outline:none
+}
+.filename-input:focus{border-color:var(--blue)}
+.tb-sep{width:1px;height:20px;background:var(--border);margin:0 4px}
+.btn-tb{
+  border:none;border-radius:5px;padding:5px 12px;font-size:12px;
+  font-weight:500;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px
+}
+.btn-run{background:#238636;color:#fff}
+.btn-run:hover:not(:disabled){background:#2ea043}
+.btn-stop{background:#21262d;color:var(--red);border:1px solid var(--border)}
+.btn-stop:hover:not(:disabled){background:#2d0f0f}
+.btn-save{background:#21262d;color:var(--muted);border:1px solid var(--border)}
+.btn-save:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+.btn-dl{background:#21262d;color:var(--green);border:1px solid var(--border)}
+.btn-dl:hover:not(:disabled){border-color:var(--green)}
+.btn-tb:disabled{opacity:.4;cursor:not-allowed}
+.tb-status{margin-left:auto;font-size:11px;color:var(--muted)}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:var(--muted)}
+.status-dot.running{background:var(--blue);animation:pulse 1.2s infinite}
+.status-dot.done{background:var(--green)}
+.status-dot.failed,.status-dot.timeout{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* Monaco wrapper */
+.editor-wrap{flex:1;min-height:0;position:relative}
+#editor-container{position:absolute;inset:0}
+
+/* Terminal */
+.terminal{
+  height:var(--term-h);flex-shrink:0;
+  border-top:1px solid var(--border);display:flex;flex-direction:column
+}
+.term-bar{
+  display:flex;align-items:center;gap:8px;padding:0 12px;
+  height:32px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border2)
+}
+.term-bar span{font-size:11px;color:var(--muted);font-family:monospace}
+.term-bar .spacer{flex:1}
+.btn-term{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer
+}
+.btn-term:hover{border-color:var(--muted);color:var(--text)}
+.term-output{
+  flex:1;overflow-y:auto;padding:8px 14px;
+  background:#010409;
+  font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:12px;line-height:1.7
+}
+.l{color:#adbac7;white-space:pre-wrap;word-break:break-all}
+.l.e{color:var(--red)}
+.l.w{color:var(--yellow)}
+.l.s{color:var(--green)}
+.l.sys{color:#6e7681;font-style:italic}
+.term-empty{color:var(--muted);font-size:12px;padding:12px 14px;font-style:italic}
+
+/* Save modal */
+#save-modal{
+  position:fixed;inset:0;background:#000a;display:none;
+  align-items:center;justify-content:center;z-index:500
+}
+#save-modal.open{display:flex}
+.modal-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:24px;width:340px
+}
+.modal-box h3{font-size:15px;margin-bottom:16px}
+.modal-box input{
+  width:100%;background:#0d1117;border:1px solid var(--border);border-radius:6px;
+  color:var(--text);padding:8px 10px;font-size:13px;outline:none;margin-bottom:12px
+}
+.modal-box input:focus{border-color:var(--blue)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.btn-modal{
+  border:none;border-radius:6px;padding:7px 16px;font-size:13px;
+  cursor:pointer;font-weight:500
+}
+.btn-modal-cancel{background:var(--border);color:var(--text)}
+.btn-modal-ok{background:var(--blue);color:#fff}
+</style>
+</head>
+<body>
+
+<!-- Auth Overlay -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="icon">⚡</div>
+      <div><h2>SpiNNaker2 Playground</h2><p>Neuromorphic Computing Platform</p></div>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">Sign In</div>
+      <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</div>
+    </div>
+
+    <form class="auth-form active" id="form-login" onsubmit="doLogin(event)">
+      <div><label>Username</label><input id="l-user" autocomplete="username" required></div>
+      <div><label>Password</label><input id="l-pass" type="password" autocomplete="current-password" required></div>
+      <div class="auth-err" id="l-err"></div>
+      <button class="btn-auth" type="submit" id="l-btn">Sign In</button>
+    </form>
+
+    <form class="auth-form" id="form-register" onsubmit="doRegister(event)">
+      <div><label>Username</label><input id="r-user" autocomplete="username" required></div>
+      <div><label>Email</label><input id="r-email" type="email" autocomplete="email" required></div>
+      <div><label>Password (min. 8 characters)</label><input id="r-pass" type="password" autocomplete="new-password" required></div>
+      <div class="auth-err" id="r-err"></div>
+      <button class="btn-auth" type="submit" id="r-btn">Register</button>
+    </form>
+  </div>
+</div>
+
+<!-- Save modal -->
+<div id="save-modal">
+  <div class="modal-box">
+    <h3>Save Code</h3>
+    <input id="save-title" placeholder="Code title…" maxlength="100">
+    <div class="modal-actions">
+      <button class="btn-modal btn-modal-cancel" onclick="closeSaveModal()">Cancel</button>
+      <button class="btn-modal btn-modal-ok" onclick="confirmSave()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app" style="display:none">
+  <header>
+    <div class="h-logo">⚡</div>
+    <div class="h-title">SpiNNaker2 Playground</div>
+    <div class="h-sep"></div>
+    <div class="h-user">Hello, <span id="h-username">—</span></div>
+    <button class="h-btn" onclick="logout()">Sign Out</button>
+  </header>
+
+  <div class="workspace">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-section">Templates</div>
+      <div id="template-list" class="sidebar-list"></div>
+
+      <hr class="sidebar-divider">
+      <div class="sidebar-section">Saved Codes</div>
+      <div id="saved-list" class="sidebar-list"></div>
+
+      <div class="sidebar-new">
+        <button class="btn-new" onclick="openSaveModal()">＋ Save Current Code</button>
+      </div>
+    </div>
+
+    <!-- Editor panel -->
+    <div class="editor-panel">
+      <div class="toolbar">
+        <input class="filename-input" id="filename" value="untitled.py" spellcheck="false">
+        <div class="tb-sep"></div>
+        <button class="btn-tb btn-run" id="btn-run" onclick="runCode()">▶ Run</button>
+        <button class="btn-tb btn-stop" id="btn-stop" onclick="stopJob()" disabled>■ Stop</button>
+        <button class="btn-tb btn-save" onclick="openSaveModal()">💾 Save</button>
+        <button class="btn-tb btn-dl"  id="btn-dl" onclick="downloadResult()" disabled>↓ Download</button>
+        <div class="tb-status"><span class="status-dot" id="tb-dot"></span><span id="tb-label">Ready</span></div>
+      </div>
+
+      <div class="editor-wrap">
+        <div id="editor-container"></div>
+      </div>
+
+      <div class="terminal">
+        <div class="term-bar">
+          <span>Terminal</span>
+          <div class="spacer"></div>
+          <button class="btn-term" onclick="clearTerm()">Clear</button>
+        </div>
+        <div class="term-output" id="term-out">
+          <div class="term-empty">Press ▶ Run to execute your code.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Monaco Editor (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/loader.js"></script>
+<script>
+'use strict';
+
+// ── State ──────────────────────────────────────────────────────────────────
+let token      = localStorage.getItem('token') || '';
+let editor     = null;
+let currentJob = null;   // { id, es }
+let currentCode= null;   // saved code id being edited
+
+// ── Auth helpers ───────────────────────────────────────────────────────────
+function authHeaders(extra = {}) {
+  return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...extra };
+}
+
+async function api(method, path, body) {
+  const opts = { method, headers: authHeaders() };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  if (res.status === 401) { logout(); return null; }
+  return res;
+}
+
+function switchTab(tab) {
+  document.getElementById('form-login').classList.toggle('active',    tab === 'login');
+  document.getElementById('form-register').classList.toggle('active', tab === 'register');
+  document.querySelectorAll('.auth-tab').forEach((el, i) =>
+    el.classList.toggle('active', (i === 0) === (tab === 'login')));
+  document.getElementById('l-err').textContent = '';
+  document.getElementById('r-err').textContent = '';
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('l-btn');
+  btn.disabled = true;
+  document.getElementById('l-err').textContent = '';
+  try {
+    const res  = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: document.getElementById('l-user').value,
+                             password: document.getElementById('l-pass').value }),
+    });
+    const data = await res.json();
+    if (!res.ok) { document.getElementById('l-err').textContent = data.detail; return; }
+    token = data.access_token;
+    localStorage.setItem('token', token);
+    await enterApp();
+  } catch { document.getElementById('l-err').textContent = 'Connection error.'; }
+  finally  { btn.disabled = false; }
+}
+
+async function doRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('r-btn');
+  btn.disabled = true;
+  document.getElementById('r-err').textContent = '';
+  try {
+    const res  = await fetch('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('r-user').value,
+        email:    document.getElementById('r-email').value,
+        password: document.getElementById('r-pass').value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) { document.getElementById('r-err').textContent = data.detail; return; }
+    token = data.access_token;
+    localStorage.setItem('token', token);
+    await enterApp();
+  } catch { document.getElementById('r-err').textContent = 'Connection error.'; }
+  finally  { btn.disabled = false; }
+}
+
+function logout() {
+  token = '';
+  localStorage.removeItem('token');
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('app').style.display          = 'none';
+}
+
+// ── App init ───────────────────────────────────────────────────────────────
+async function enterApp() {
+  const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+  if (!res.ok) { logout(); return; }
+  const me = await res.json();
+  document.getElementById('h-username').textContent   = me.username;
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('app').style.display          = 'flex';
+  initMonaco();
+  await Promise.all([loadTemplates(), loadSavedCodes()]);
+}
+
+// ── Monaco ─────────────────────────────────────────────────────────────────
+function initMonaco() {
+  if (editor) return;
+  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs' } });
+  require(['vs/editor/editor.main'], () => {
+    editor = monaco.editor.create(document.getElementById('editor-container'), {
+      value: '# Write your SpiNNaker2 code here\nprint("Hello, SpiNNaker2!")\n',
+      language:    'python',
+      theme:       'vs-dark',
+      fontSize:    14,
+      minimap:     { enabled: false },
+      lineNumbers: 'on',
+      scrollBeyondLastLine: false,
+      automaticLayout:      true,
+      fontFamily:  "'Cascadia Code','Fira Code',Consolas,monospace",
+    });
+  });
+}
+
+// ── Templates ──────────────────────────────────────────────────────────────
+async function loadTemplates() {
+  const res = await api('GET', '/templates');
+  if (!res || !res.ok) return;
+  const list = await res.json();
+  const el   = document.getElementById('template-list');
+  el.innerHTML = list.length ? '' : '<div class="sidebar-empty">No templates found</div>';
+  list.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'sidebar-item';
+    div.innerHTML = `<span class="si-icon">📄</span><span class="si-text" title="${esc(t.description)}">${esc(t.name)}</span>`;
+    div.onclick   = () => loadTemplate(t.name, div);
+    el.appendChild(div);
+  });
+}
+
+async function loadTemplate(name, el) {
+  const res = await api('GET', `/templates/${encodeURIComponent(name)}`);
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  editor?.setValue(data.code);
+  document.getElementById('filename').value = name;
+  currentCode = null;
+  document.querySelectorAll('#template-list .sidebar-item').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#saved-list .sidebar-item').forEach(e => e.classList.remove('active'));
+}
+
+// ── Saved codes ────────────────────────────────────────────────────────────
+async function loadSavedCodes() {
+  const res = await api('GET', '/codes');
+  if (!res || !res.ok) return;
+  const list = await res.json();
+  renderSavedList(list);
+}
+
+function renderSavedList(list) {
+  const el = document.getElementById('saved-list');
+  el.innerHTML = list.length ? '' : '<div class="sidebar-empty">No saved codes yet</div>';
+  list.forEach(c => {
+    const div = document.createElement('div');
+    div.className   = 'sidebar-item';
+    div.dataset.id  = c.id;
+    div.innerHTML   = `<span class="si-icon">📝</span>
+      <span class="si-text" title="${esc(c.title)}">${esc(c.title)}</span>
+      <button class="si-del" title="Delete" onclick="deleteCode(event,${c.id})">✕</button>`;
+    div.onclick = () => openSavedCode(c.id, div);
+    el.appendChild(div);
+  });
+}
+
+async function openSavedCode(id, el) {
+  const res = await api('GET', `/codes/${id}`);
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  editor?.setValue(data.code);
+  document.getElementById('filename').value = data.title.endsWith('.py') ? data.title : data.title + '.py';
+  currentCode = id;
+  document.querySelectorAll('#saved-list .sidebar-item').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#template-list .sidebar-item').forEach(e => e.classList.remove('active'));
+}
+
+async function deleteCode(e, id) {
+  e.stopPropagation();
+  if (!confirm('Are you sure you want to delete this code?')) return;
+  const res = await api('DELETE', `/codes/${id}`);
+  if (res && res.status === 204) {
+    if (currentCode === id) currentCode = null;
+    await loadSavedCodes();
+  }
+}
+
+// ── Save modal ─────────────────────────────────────────────────────────────
+function openSaveModal() {
+  const fname = document.getElementById('filename').value;
+  document.getElementById('save-title').value = fname.replace(/\.py$/, '');
+  document.getElementById('save-modal').classList.add('open');
+  setTimeout(() => document.getElementById('save-title').focus(), 50);
+}
+function closeSaveModal() {
+  document.getElementById('save-modal').classList.remove('open');
+}
+
+async function confirmSave() {
+  const title = document.getElementById('save-title').value.trim();
+  if (!title) return;
+  const code = editor?.getValue() || '';
+
+  if (currentCode) {
+    // güncelle
+    await api('PUT', `/codes/${currentCode}`, { title, code });
+  } else {
+    // yeni kayıt
+    const res = await api('POST', '/codes', { title, code });
+    if (res && res.ok) {
+      const data = await res.json();
+      currentCode = data.id;
+    }
+  }
+  closeSaveModal();
+  await loadSavedCodes();
+}
+
+// ── Run / Stop ─────────────────────────────────────────────────────────────
+async function runCode() {
+  if (!editor) return;
+  const code     = editor.getValue();
+  const filename = document.getElementById('filename').value || 'untitled.py';
+
+  clearTerm();
+  setJobStatus('running', 'Running…');
+  document.getElementById('btn-run').disabled  = true;
+  document.getElementById('btn-stop').disabled = false;
+  document.getElementById('btn-dl').disabled   = true;
+
+  const blob = new Blob([code], { type: 'text/plain' });
+  const file = new File([blob], filename.endsWith('.py') ? filename : filename + '.py');
+  const fd   = new FormData();
+  fd.append('file', file);
+
+  try {
+    const res = await fetch('/jobs', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: fd,
+    });
+    if (res.status === 401) { logout(); return; }
+    if (!res.ok) {
+      const err = await res.json();
+      termLine(`[Error: ${err.detail}]`, 'e');
+      setJobStatus('failed', 'Error');
+      resetRunBtn();
+      return;
+    }
+    const data = await res.json();
+    openLogStream(data.job_id);
+  } catch (err) {
+    termLine(`[Connection error: ${err.message}]`, 'e');
+    setJobStatus('failed', 'Error');
+    resetRunBtn();
+  }
+}
+
+function openLogStream(job_id) {
+  if (currentJob?.es) currentJob.es.close();
+  const es = new EventSource(`/jobs/${job_id}/logs?token=${encodeURIComponent(token)}`);
+  currentJob = { id: job_id, es };
+
+  es.onmessage = e => {
+    if (e.data === '__DONE__') {
+      es.close();
+      refreshJobStatus(job_id);
+      return;
+    }
+    let line;
+    try { line = JSON.parse(e.data); } catch { line = e.data; }
+    termLine(line, classifyLine(line));
+  };
+  es.onerror = () => { es.close(); };
+}
+
+async function refreshJobStatus(job_id) {
+  const res = await api('GET', `/jobs/${job_id}/status`);
+  if (!res || !res.ok) { resetRunBtn(); return; }
+  const data = await res.json();
+  const s    = data.status;
+
+  if (s === 'done') {
+    setJobStatus('done', 'Completed');
+    document.getElementById('btn-dl').disabled = false;
+  } else if (s === 'timeout') {
+    setJobStatus('timeout', 'Timed Out');
+  } else {
+    setJobStatus('failed', 'Failed');
+  }
+  resetRunBtn();
+}
+
+async function stopJob() {
+  if (currentJob?.es) currentJob.es.close();
+  if (currentJob?.id) {
+    try {
+      await fetch(`/jobs/${currentJob.id}/stop`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+    } catch {}
+  }
+  termLine('[Stopped by user]', 'sys');
+  setJobStatus('failed', 'Stopped');
+  resetRunBtn();
+}
+
+function resetRunBtn() {
+  document.getElementById('btn-run').disabled  = false;
+  document.getElementById('btn-stop').disabled = true;
+}
+
+async function downloadResult() {
+  if (!currentJob?.id) return;
+  window.open(`/jobs/${currentJob.id}/results?token=${encodeURIComponent(token)}`, '_blank');
+}
+
+// ── Terminal helpers ───────────────────────────────────────────────────────
+function termLine(text, cls = '') {
+  const out = document.getElementById('term-out');
+  const empty = out.querySelector('.term-empty');
+  if (empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'l' + (cls ? ' ' + cls : '');
+  div.textContent = text;
+  out.appendChild(div);
+  out.scrollTop = out.scrollHeight;
+}
+
+function clearTerm() {
+  document.getElementById('term-out').innerHTML = '';
+}
+
+function classifyLine(line) {
+  if (!line) return '';
+  const l = line.toLowerCase();
+  if (l.startsWith('[process exited') || l.startsWith('[timeout') || l.startsWith('[stopped')) return 'sys';
+  if (l.includes('error') || l.includes('traceback') || l.includes('exception')) return 'e';
+  if (l.includes('warn')) return 'w';
+  if (l.includes('success') || l.includes('✓') || l.includes('completed') || l.includes('done')) return 's';
+  return '';
+}
+
+function setJobStatus(state, label) {
+  const dot = document.getElementById('tb-dot');
+  const lbl = document.getElementById('tb-label');
+  dot.className = 'status-dot ' + state;
+  lbl.textContent = label;
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Keyboard shortcut: Ctrl+Enter = Run, Ctrl+S = Save
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's')     { e.preventDefault(); openSaveModal(); }
+  if (e.key === 'Escape') closeSaveModal();
+});
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+(async () => {
+  if (token) {
+    const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.ok) { await enterApp(); return; }
+    localStorage.removeItem('token');
+    token = '';
+  }
+  // Kayıt açık mı? Yoksa tab'ı gizle.
+  try {
+    const res = await fetch('/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
+    // sadece bağlantı testi
+  } catch {}
+})();
+</script>
+</body>
+</html>
