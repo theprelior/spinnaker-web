@@ -17,7 +17,7 @@ A web-based IDE for running Python experiments on **SpiNNaker2 neuromorphic hard
                              │  HTTP / SSE  (Tailscale VPN)
                              ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                     Fedora Machine (IdeaPad)                             │
+│                     Fedora Machine (SpiNNaker2 Host)                             │
 │                                                                          │
 │  ┌──────────────────────┐      ┌─────────────────────────────────────┐  │
 │  │   FastAPI (port 8000) │      │           Redis (Valkey)            │  │
@@ -42,7 +42,7 @@ A web-based IDE for running Python experiments on **SpiNNaker2 neuromorphic hard
 │                                               ▼                          │
 │                                ┌─────────────────────────────────────┐  │
 │                                │   SpiNNaker2 Hardware               │  │
-│                                │   /home/geb/.conda/envs/spinnaker2  │  │
+│                                │   /home/<user>/.conda/envs/spinnaker2│  │
 │                                └─────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -147,8 +147,8 @@ spinnaker-web/
 
 ### Option A — Deploy from local machine
 ```bash
-bash deploy.sh                        # uses geb@100.104.85.76 by default
-bash deploy.sh geb@192.168.1.195      # or specify address
+bash deploy.sh                        # uses default address from deploy.sh
+bash deploy.sh user@192.168.x.x       # or specify address
 ```
 
 ### Option B — Run directly on Fedora
@@ -176,7 +176,7 @@ Copy `.env.example` to `.env` and adjust:
 ```env
 JWT_SECRET=<random 64-char hex>      # python3 -c "import secrets; print(secrets.token_hex(32))"
 ALLOW_REGISTRATION=true              # set false after creating accounts
-SPINNAKER_PYTHON=/home/geb/.conda/envs/spinnaker2/bin/python3
+SPINNAKER_PYTHON=/home/<user>/.conda/envs/spinnaker2/bin/python3
 MAX_JOBS_PER_HOUR=999
 JOB_TIMEOUT_SECONDS=300
 JOB_MEMORY_MB=512
@@ -193,7 +193,7 @@ sudo systemctl restart spinnaker-web spinnaker-celery
 ## Usage
 
 ### Writing & Running Code
-1. Open `http://100.104.85.76:8000` in your browser
+1. Open `http://<tailscale-ip>:8000` in your browser
 2. Write Python in the editor (or load a template from the sidebar)
 3. Press **▶ Run** (or `Ctrl+Enter`)
 4. Watch live output in the terminal panel
@@ -226,7 +226,7 @@ git commit -m "feat: ..."
 git push
 
 # 4. Update Fedora
-ssh geb@100.104.85.76
+ssh <user>@<tailscale-ip>
 cd ~/Desktop/spinnaker-web
 git pull
 sudo systemctl restart spinnaker-web spinnaker-celery
@@ -275,5 +275,5 @@ sudo systemctl stop spinnaker-web spinnaker-celery
 | Method | URL |
 |--------|-----|
 | Local | `http://localhost:8000` |
-| Local network | `http://192.168.1.195:8000` |
-| Tailscale | `http://100.104.85.76:8000` |
+| Local network | `http://<local-ip>:8000` |
+| Tailscale | `http://<tailscale-ip>:8000` |
