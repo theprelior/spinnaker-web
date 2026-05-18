@@ -347,6 +347,41 @@ async def download_results(job_id: str, current_user: User = Depends(get_current
                         filename=f"results_{base}_{job_id[:8]}.tar.gz")
 
 
+@app.get("/jobs/{job_id}/files")
+async def list_job_files(job_id: str, current_user: User = Depends(get_current_user)):
+    await _owned_job(job_id, current_user)
+    base = Path("job_outputs") / job_id
+    search = base / "results" if (base / "results").exists() else base
+    if not search.exists():
+        return []
+    IMAGE_EXT = {".png", ".jpg", ".jpeg", ".gif", ".svg"}
+    TEXT_EXT  = {".txt", ".csv", ".log", ".json"}
+    files = []
+    for f in sorted(search.rglob("*")):
+        if f.is_file():
+            ext = f.suffix.lower()
+            files.append({
+                "name":     f.name,
+                "path":     str(f.relative_to(base)),
+                "size":     f.stat().st_size,
+                "is_image": ext in IMAGE_EXT,
+                "is_text":  ext in TEXT_EXT,
+            })
+    return files
+
+
+@app.get("/jobs/{job_id}/files/{file_path:path}")
+async def get_job_file(job_id: str, file_path: str, current_user: User = Depends(get_current_user)):
+    await _owned_job(job_id, current_user)
+    base   = (Path("job_outputs") / job_id).resolve()
+    target = (base / file_path).resolve()
+    if not str(target).startswith(str(base)):
+        raise HTTPException(status_code=400, detail="Invalid path.")
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="File not found.")
+    return FileResponse(target)
+
+
 # ── Saved code endpoints ──────────────────────────────────────────────────────
 
 @app.get("/codes")
