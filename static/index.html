@@ -63,6 +63,13 @@ header{
 .h-sep{flex:1}
 .h-user{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .h-user span{color:var(--text);font-weight:600}
+.quota-badge{
+  font-size:10px;padding:2px 8px;border-radius:10px;
+  background:var(--border2);color:var(--muted);
+  cursor:default;white-space:nowrap
+}
+.quota-badge.warn{background:#3d2f00;color:var(--yellow)}
+.quota-badge.full{background:#220d0d;color:var(--red)}
 .h-btn{
   background:none;border:1px solid var(--border);color:var(--muted);
   padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;transition:.15s
@@ -75,8 +82,10 @@ header{
 .sidebar{
   width:var(--sidebar-w);flex-shrink:0;
   background:var(--surface);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;overflow:hidden
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:width .2s ease
 }
+.sidebar.collapsed{width:0;border-right:none}
 .sidebar-section{padding:10px 10px 4px;font-size:10px;font-weight:700;
   text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .sidebar-list{overflow-y:auto;flex:1}
@@ -145,12 +154,24 @@ header{
 /* Monaco wrapper */
 .editor-wrap{flex:1;min-height:0;position:relative}
 #editor-container{position:absolute;inset:0}
+#editor-drop-overlay{
+  position:absolute;inset:0;background:#58a6ff12;
+  border:2px dashed var(--blue);border-radius:4px;
+  display:none;align-items:center;justify-content:center;
+  font-size:16px;color:var(--blue);z-index:10;pointer-events:none
+}
+#editor-drop-overlay.active{display:flex}
 
 /* Terminal */
 .terminal{
   height:var(--term-h);flex-shrink:0;
   border-top:1px solid var(--border);display:flex;flex-direction:column
 }
+.term-resize-handle{
+  height:5px;cursor:ns-resize;flex-shrink:0;
+  background:transparent;transition:background .15s
+}
+.term-resize-handle:hover,.term-resize-handle.dragging{background:var(--blue)}
 .term-bar{
   display:flex;align-items:center;gap:8px;padding:0 12px;
   height:32px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border2)
@@ -229,6 +250,116 @@ header{
   color:var(--muted);font-size:13px
 }
 
+/* ── Toast notifications ── */
+#toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:3000;pointer-events:none}
+.toast{
+  padding:10px 16px;border-radius:8px;font-size:12px;font-weight:500;
+  max-width:300px;pointer-events:all;
+  animation:toast-in .2s ease forwards
+}
+.toast.success{background:#122218;border:1px solid var(--green);color:var(--green)}
+.toast.error  {background:#220d0d;border:1px solid var(--red);color:var(--red)}
+.toast.info   {background:#0d1b2e;border:1px solid var(--blue);color:var(--blue)}
+.toast.out    {animation:toast-out .25s ease forwards}
+@keyframes toast-in {from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@keyframes toast-out{from{opacity:1}to{opacity:0;transform:translateX(16px)}}
+
+/* ── Job history ── */
+.job-hist-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.job-hist-dot.done   {background:var(--green)}
+.job-hist-dot.failed,.job-hist-dot.timeout{background:var(--red)}
+.job-hist-dot.running{background:var(--blue);animation:pulse 1.2s infinite}
+.job-hist-dot.queued {background:var(--yellow)}
+#job-hist-list{overflow-y:auto;max-height:150px}
+
+/* ── Results tabs ── */
+.results-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;padding:0 4px}
+.results-tab{
+  padding:8px 14px;font-size:12px;font-weight:500;color:var(--muted);
+  cursor:pointer;border-bottom:2px solid transparent;transition:.15s
+}
+.results-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.job-info-grid{padding:16px;display:grid;grid-template-columns:120px 1fr;gap:8px 12px;align-items:start;overflow-y:auto}
+.job-info-label{font-size:11px;color:var(--muted);padding-top:1px}
+.job-info-value{font-size:12px;color:var(--text);font-family:monospace;word-break:break-all}
+
+/* ── Admin panel ── */
+#admin-modal{position:fixed;inset:0;background:#000c;display:none;align-items:flex-start;justify-content:center;z-index:700;padding-top:60px}
+#admin-modal.open{display:flex}
+.admin-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  width:min(720px,96vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden
+}
+.admin-header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.admin-header h3{font-size:14px;font-weight:600;flex:1}
+.admin-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;padding:0 4px}
+.admin-tab{padding:8px 16px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.15s}
+.admin-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.admin-content{overflow-y:auto;flex:1}
+.admin-table{width:100%;border-collapse:collapse;font-size:12px}
+.admin-table th{text-align:left;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface)}
+.admin-table td{padding:8px 14px;border-bottom:1px solid var(--border2);vertical-align:middle}
+.admin-table tr:hover td{background:#1c2128}
+.btn-admin{border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:500}
+.btn-kill{background:#3d0f0f;color:var(--red);border:1px solid #f8514930}
+.btn-kill:hover{background:#5a1515}
+.btn-toggle-on {background:#122218;color:var(--green);border:1px solid #3fb95030}
+.btn-toggle-off{background:#21262d;color:var(--muted);border:1px solid var(--border)}
+.badge-admin{font-size:9px;background:#1f3d5c;color:var(--blue);padding:1px 6px;border-radius:8px;font-weight:700}
+.badge-inactive{font-size:9px;background:#2d1a00;color:var(--yellow);padding:1px 6px;border-radius:8px}
+
+/* ── Hardware utilization chart ── */
+.hw-chart-wrap{border-top:1px solid var(--border);padding:14px 14px 10px;flex-shrink:0}
+.hw-chart-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.hw-chart-bars{display:flex;align-items:flex-end;gap:1px;height:48px}
+.hw-chart-bar{flex:1;border-radius:1px 1px 0 0;transition:.15s}
+.hw-chart-axis{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:3px}
+.hw-chart-stats{display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--muted)}
+.hw-chart-stats b{color:var(--text)}
+
+/* ── Hardware queue status widget ── */
+.hw-status{
+  display:flex;align-items:center;gap:6px;font-size:11px;
+  padding:3px 10px;border-radius:20px;
+  background:var(--border2);color:var(--muted);
+  cursor:pointer;transition:.15s;white-space:nowrap;user-select:none
+}
+.hw-status:hover{background:var(--border);color:var(--text)}
+.hw-dot-hw{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:.3s}
+.hw-dot-hw.ready {background:var(--green)}
+.hw-dot-hw.mine  {background:var(--blue);animation:pulse 1.2s infinite}
+.hw-dot-hw.queued{background:var(--yellow);animation:pulse 1.2s infinite}
+.hw-dot-hw.busy  {background:var(--red)}
+
+/* ── Queue modal ── */
+#queue-modal{
+  position:fixed;inset:0;background:#000c;display:none;
+  align-items:flex-start;justify-content:center;z-index:600;padding-top:70px
+}
+#queue-modal.open{display:flex}
+.queue-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  width:min(500px,94vw);max-height:70vh;display:flex;flex-direction:column;overflow:hidden
+}
+.queue-header{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0
+}
+.queue-header h3{font-size:14px;font-weight:600;flex:1}
+.queue-content{overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.queue-slot{border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.queue-slot-top{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.q-badge{
+  font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;
+  text-transform:uppercase;letter-spacing:.05em
+}
+.q-running{background:#1f3d5c;color:var(--blue)}
+.q-pos    {background:#3d2f00;color:var(--yellow)}
+.q-mine   {background:#1a3a1a;color:var(--green);border:1px solid #3fb95060}
+.queue-slot-user{font-size:13px;font-weight:600}
+.queue-slot-meta{font-size:11px;color:var(--muted)}
+.queue-empty{text-align:center;color:var(--muted);font-size:13px;padding:28px 0}
+
 /* Save modal */
 #save-modal{
   position:fixed;inset:0;background:#000a;display:none;
@@ -252,6 +383,49 @@ header{
 }
 .btn-modal-cancel{background:var(--border);color:var(--text)}
 .btn-modal-ok{background:var(--blue);color:#fff}
+
+/* ── Help modal ── */
+#help-modal{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:700}
+#help-modal.open{display:flex}
+.help-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:min(600px,92vw);max-height:82vh;display:flex;flex-direction:column;overflow:hidden}
+.help-header{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.help-header h3{flex:1;font-size:14px;font-weight:600}
+.help-body{overflow-y:auto;padding:20px 24px;font-size:13px;line-height:1.75}
+.help-body h4{color:var(--blue);margin:18px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+.help-body h4:first-child{margin-top:0}
+.help-body p{color:var(--muted);margin-bottom:5px}
+.help-body kbd{background:var(--border2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:11px;font-family:monospace;color:var(--text)}
+.help-body .step{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
+.help-body .step-num{background:var(--blue);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+
+/* ── Compare modal ── */
+#compare-modal{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:650}
+#compare-modal.open{display:flex}
+.compare-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:min(1080px,96vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.compare-header{display:flex;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);gap:10px;flex-shrink:0}
+.compare-header h3{font-size:14px;font-weight:600;flex:1}
+.compare-panels{display:flex;flex:1;min-height:0}
+.compare-panel{flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border)}
+.compare-panel:last-child{border-right:none}
+.compare-panel-head{padding:8px 12px;background:var(--bg);font-size:11px;color:var(--muted);border-bottom:1px solid var(--border2);flex-shrink:0;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden}
+.compare-panel-head strong{color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.compare-filelist{height:120px;overflow-y:auto;border-bottom:1px solid var(--border2);flex-shrink:0}
+.compare-preview{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;background:#010409;padding:12px}
+.compare-preview img{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px}
+.compare-preview pre{color:#adbac7;font-family:monospace;font-size:11px;line-height:1.6;white-space:pre-wrap;word-break:break-word;align-self:flex-start;width:100%}
+.compare-empty{color:var(--muted);font-size:12px}
+
+/* ── User stats (sidebar) ── */
+.user-stats{display:flex;gap:0;border-top:1px solid var(--border2);flex-shrink:0}
+.user-stat{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-right:1px solid var(--border2)}
+.user-stat:last-child{border-right:none}
+.user-stat-val{font-size:16px;font-weight:700;color:var(--text);line-height:1.2}
+.user-stat-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:2px}
+
+/* ── Compare pick button ── */
+.btn-compare{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 3px;line-height:1;flex-shrink:0;opacity:.6;transition:.1s}
+.btn-compare:hover{opacity:1;color:var(--blue)}
+.btn-compare.selected{color:var(--blue);opacity:1}
 </style>
 </head>
 <body>
@@ -285,6 +459,79 @@ header{
   </div>
 </div>
 
+<!-- Help modal -->
+<div id="help-modal">
+  <div class="help-box">
+    <div class="help-header">
+      <h3>? Quick Help</h3>
+      <button class="results-close" onclick="closeHelpModal()">✕</button>
+    </div>
+    <div class="help-body">
+      <h4>Getting Started</h4>
+      <div class="step"><div class="step-num">1</div><p>Pick a <strong>template</strong> from the sidebar or write your own Python code.</p></div>
+      <div class="step"><div class="step-num">2</div><p>Click <strong>▶ Run</strong> (or <kbd>Ctrl+Enter</kbd>) to submit to real SpiNNaker2 hardware.</p></div>
+      <div class="step"><div class="step-num">3</div><p>Watch the <strong>terminal</strong> for live output. Jobs run one at a time — yours will queue if hardware is busy.</p></div>
+      <div class="step"><div class="step-num">4</div><p>When done, use <strong>⊞ View</strong> to browse output files and plots, or <strong>↓ Download</strong> for a .tar.gz archive.</p></div>
+
+      <h4>Templates</h4>
+      <p>8 built-in SpiNNaker2 examples: LIF neurons, current-based synapses, Poisson inputs, Izhikevich model, adaptive LIF, and a 5-group synfire chain. Each template runs out of the box.</p>
+
+      <h4>Hardware Queue</h4>
+      <p>SpiNNaker2 executes one job at a time. Click the hardware status dot in the header to see the live queue, your position, and the estimated wait time.</p>
+
+      <h4>Quota &amp; Limits</h4>
+      <p>Each user may submit up to <strong id="help-quota-limit">—</strong> jobs per hour. Your usage is shown as a badge in the header. Scripts may run for up to 5 minutes before timing out.</p>
+
+      <h4>Reproducibility</h4>
+      <p>Open <strong>⊞ View → Job Info</strong> after a run to see software versions, hardware details, and timestamps. Use <strong>Export Metadata</strong> to download a JSON snapshot for your methods section.</p>
+
+      <h4>Compare Runs</h4>
+      <p>In the <strong>Recent Jobs</strong> sidebar, click <strong>⊕</strong> on a completed job, then <strong>⊕</strong> on another to view their outputs side by side.</p>
+
+      <h4>Share Code</h4>
+      <p>Click <strong>Share</strong> in the toolbar to generate a 30-day link anyone can use to load your code directly into the editor.</p>
+
+      <h4>Keyboard Shortcuts</h4>
+      <p><kbd>Ctrl+Enter</kbd> Run &nbsp;·&nbsp; <kbd>Ctrl+S</kbd> Save &nbsp;·&nbsp; <kbd>Ctrl+B</kbd> Toggle sidebar &nbsp;·&nbsp; <kbd>Esc</kbd> Close modals</p>
+    </div>
+  </div>
+</div>
+
+<!-- Compare modal -->
+<div id="compare-modal">
+  <div class="compare-box">
+    <div class="compare-header">
+      <h3>⊞ Compare Results</h3>
+      <button class="results-close" onclick="closeCompareModal()">✕</button>
+    </div>
+    <div class="compare-panels">
+      <div class="compare-panel">
+        <div class="compare-panel-head" id="compare-head-left"><strong>Job A</strong></div>
+        <div class="compare-filelist results-filelist" id="compare-files-left"></div>
+        <div class="compare-preview" id="compare-preview-left"><span class="compare-empty">Loading…</span></div>
+      </div>
+      <div class="compare-panel">
+        <div class="compare-panel-head" id="compare-head-right"><strong>Job B</strong></div>
+        <div class="compare-filelist results-filelist" id="compare-files-right"></div>
+        <div class="compare-preview" id="compare-preview-right"><span class="compare-empty">Loading…</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Share dialog -->
+<div id="share-dialog" style="position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:750">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:min(400px,92vw);padding:22px">
+    <div style="display:flex;align-items:center;margin-bottom:12px">
+      <h3 style="flex:1;font-size:14px;font-weight:600">Share Code</h3>
+      <button onclick="closeShareDialog()" class="results-close">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Anyone with this link can load your code in the editor. Expires in 30 days.</p>
+    <input id="share-url" readonly onclick="this.select()" style="width:100%;background:#0d1117;border:1px solid var(--border);border-radius:5px;color:var(--blue);padding:8px 10px;font-size:11px;font-family:monospace;outline:none;cursor:pointer">
+    <button onclick="copyShareUrl()" style="width:100%;margin-top:8px;background:var(--blue);color:#fff;border:none;border-radius:6px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">Copy Link</button>
+  </div>
+</div>
+
 <!-- Results viewer modal -->
 <div id="results-modal">
   <div class="results-box">
@@ -292,12 +539,49 @@ header{
       <h3 id="results-title">Results</h3>
       <button class="results-close" onclick="closeResultsModal()">✕</button>
     </div>
-    <div class="results-body">
+    <div class="results-tabs">
+      <div class="results-tab active" data-tab="files" onclick="switchResultsTab('files')">Files</div>
+      <div class="results-tab" data-tab="info" onclick="switchResultsTab('info')">Job Info</div>
+    </div>
+    <div id="results-files-panel" class="results-body">
       <div class="results-filelist" id="results-filelist"></div>
       <div class="results-preview" id="results-preview">
         <span class="results-empty">Select a file to preview</span>
       </div>
     </div>
+    <div id="results-info-panel" class="job-info-grid" style="display:none"></div>
+  </div>
+</div>
+
+<!-- Admin modal -->
+<div id="admin-modal">
+  <div class="admin-box">
+    <div class="admin-header">
+      <h3>⚙ Admin Panel</h3>
+      <button class="results-close" onclick="closeAdminPanel()">✕</button>
+    </div>
+    <div class="admin-tabs">
+      <div class="admin-tab active" data-atab="queue" onclick="switchAdminTab('queue')">Live Queue</div>
+      <div class="admin-tab" data-atab="users" onclick="switchAdminTab('users')">Users</div>
+      <div class="admin-tab" data-atab="env" onclick="switchAdminTab('env')">Environment</div>
+    </div>
+    <div class="admin-content" id="admin-content">
+      <div style="padding:20px;color:var(--muted);font-size:12px">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Queue modal -->
+<div id="queue-modal">
+  <div class="queue-box">
+    <div class="queue-header">
+      <h3>⚙ Hardware Queue</h3>
+      <button class="results-close" onclick="closeQueueModal()">✕</button>
+    </div>
+    <div class="queue-content" id="queue-content">
+      <div class="queue-empty">Loading…</div>
+    </div>
+    <div class="hw-chart-wrap" id="hw-chart-wrap" style="display:none"></div>
   </div>
 </div>
 
@@ -316,10 +600,18 @@ header{
 <!-- Main App -->
 <div id="app" style="display:none">
   <header>
+    <button class="h-btn" id="btn-sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar (Ctrl+B)">☰</button>
     <div class="h-logo">⚡</div>
     <div class="h-title">SpiNNaker2 Playground</div>
     <div class="h-sep"></div>
+    <div class="hw-status" id="hw-status" onclick="openQueueModal()" title="View hardware queue">
+      <span class="hw-dot-hw" id="hw-dot"></span>
+      <span id="hw-label">Hardware</span>
+    </div>
+    <span class="quota-badge" id="quota-badge" title="Jobs used this hour"></span>
     <div class="h-user">Hello, <span id="h-username">—</span></div>
+    <button class="h-btn" id="btn-admin" onclick="openAdminPanel()" style="display:none;color:var(--yellow);border-color:var(--yellow)">⚙ Admin</button>
+    <button class="h-btn" onclick="openHelpModal()" title="Help">? Help</button>
     <button class="h-btn" onclick="logout()">Sign Out</button>
   </header>
 
@@ -333,6 +625,12 @@ header{
       <div class="sidebar-section">Saved Codes</div>
       <div id="saved-list" class="sidebar-list"></div>
 
+      <hr class="sidebar-divider">
+      <div class="sidebar-section">Recent Jobs</div>
+      <div id="job-hist-list"><div class="sidebar-empty">No jobs yet</div></div>
+
+      <div class="user-stats" id="user-stats" title="Your all-time run statistics"></div>
+
       <div class="sidebar-new">
         <button class="btn-new" onclick="openSaveModal()">＋ Save Current Code</button>
       </div>
@@ -341,6 +639,8 @@ header{
     <!-- Editor panel -->
     <div class="editor-panel">
       <div class="toolbar">
+        <input type="file" id="file-input" accept=".py" style="display:none" onchange="handleFileInput(event)">
+        <button class="btn-tb btn-save" onclick="document.getElementById('file-input').click()" title="Open local .py file">📂 Open</button>
         <input class="filename-input" id="filename" value="untitled.py" spellcheck="false">
         <div class="tb-sep"></div>
         <button class="btn-tb btn-run" id="btn-run" onclick="runCode()">▶ Run</button>
@@ -348,17 +648,24 @@ header{
         <button class="btn-tb btn-save" onclick="openSaveModal()">💾 Save</button>
         <button class="btn-tb btn-dl"  id="btn-dl" onclick="downloadResult()" disabled>↓ Download</button>
         <button class="btn-tb btn-view" id="btn-view" onclick="openResultsModal()" disabled style="background:#21262d;color:var(--purple);border:1px solid var(--border)">⊞ View</button>
-        <div class="tb-status"><span class="status-dot" id="tb-dot"></span><span id="tb-label">Ready</span></div>
+        <div class="tb-sep"></div>
+        <button class="btn-tb btn-save" onclick="shareCode()" title="Share code via link">⇪ Share</button>
+        <button class="btn-tb btn-save" onclick="changeFontSize(-1)" title="Decrease font size">A−</button>
+        <button class="btn-tb btn-save" onclick="changeFontSize(1)"  title="Increase font size">A+</button>
+        <div class="tb-status"><span class="status-dot" id="tb-dot"></span><span id="tb-label">Ready</span><span id="tb-elapsed" style="margin-left:6px;font-variant-numeric:tabular-nums"></span></div>
       </div>
 
-      <div class="editor-wrap">
+      <div class="editor-wrap" id="editor-wrap">
         <div id="editor-container"></div>
+        <div id="editor-drop-overlay">Drop .py file to open</div>
       </div>
 
-      <div class="terminal">
+      <div class="terminal" id="terminal">
+        <div class="term-resize-handle" id="term-resize-handle"></div>
         <div class="term-bar">
           <span>Terminal</span>
           <div class="spacer"></div>
+          <button class="btn-term" onclick="copyTerminal()">Copy</button>
           <button class="btn-term" onclick="clearTerm()">Clear</button>
         </div>
         <div class="term-output" id="term-out">
@@ -369,16 +676,20 @@ header{
   </div>
 </div>
 
+<div id="toast-container"></div>
+
 <!-- Monaco Editor (CDN) -->
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/loader.js"></script>
 <script>
 'use strict';
 
 // ── State ──────────────────────────────────────────────────────────────────
-let token      = localStorage.getItem('token') || '';
-let editor     = null;
-let currentJob = null;   // { id, es }
-let currentCode= null;   // saved code id being edited
+let token        = localStorage.getItem('token') || '';
+let editor       = null;
+let currentJob   = null;   // { id, es, logCount, done }
+let currentCode  = null;   // saved code id being edited
+let lastJobHistory = [];   // cache for compare re-render
+let compareBase  = null;   // { job_id, filename } — first job picked for compare
 
 // ── Auth helpers ───────────────────────────────────────────────────────────
 function authHeaders(extra = {}) {
@@ -450,6 +761,7 @@ async function doRegister(e) {
 function logout() {
   token = '';
   localStorage.removeItem('token');
+  stopQueuePolling();
   document.getElementById('auth-overlay').style.display = 'flex';
   document.getElementById('app').style.display          = 'none';
 }
@@ -460,10 +772,15 @@ async function enterApp() {
   if (!res.ok) { logout(); return; }
   const me = await res.json();
   document.getElementById('h-username').textContent   = me.username;
+  document.getElementById('btn-admin').style.display   = me.is_admin ? '' : 'none';
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('app').style.display          = 'flex';
   initMonaco();
-  await Promise.all([loadTemplates(), loadSavedCodes()]);
+  await Promise.all([loadTemplates(), loadSavedCodes(), loadJobHistory()]);
+  startQueuePolling();
+  refreshQuota();
+  loadUserStats();
+  checkSharedCode();
 }
 
 // ── Monaco ─────────────────────────────────────────────────────────────────
@@ -482,6 +799,8 @@ function initMonaco() {
       automaticLayout:      true,
       fontFamily:  "'Cascadia Code','Fira Code',Consolas,monospace",
     });
+    editor.onDidChangeModelContent(() => scheduleAutoSave());
+    setTimeout(restoreAutoSave, 300);
   });
 }
 
@@ -586,6 +905,7 @@ async function confirmSave() {
     }
   }
   closeSaveModal();
+  showToast('Code saved', 'success');
   await loadSavedCodes();
 }
 
@@ -596,6 +916,8 @@ async function runCode() {
   const filename = document.getElementById('filename').value || 'untitled.py';
 
   clearTerm();
+  stopElapsedTimer();
+  startElapsedTimer();
   setJobStatus('running', 'Running…');
   document.getElementById('btn-run').disabled  = true;
   document.getElementById('btn-stop').disabled = false;
@@ -630,13 +952,15 @@ async function runCode() {
   }
 }
 
-function openLogStream(job_id) {
+function openLogStream(job_id, offset = 0) {
   if (currentJob?.es) currentJob.es.close();
-  const es = new EventSource(`/jobs/${job_id}/logs?token=${encodeURIComponent(token)}`);
-  currentJob = { id: job_id, es };
+  const url = `/jobs/${job_id}/logs?token=${encodeURIComponent(token)}&offset=${offset}`;
+  const es  = new EventSource(url);
+  currentJob = { id: job_id, es, logCount: offset, done: false };
 
   es.onmessage = e => {
     if (e.data === '__DONE__') {
+      currentJob.done = true;
       es.close();
       refreshJobStatus(job_id);
       return;
@@ -644,8 +968,19 @@ function openLogStream(job_id) {
     let line;
     try { line = JSON.parse(e.data); } catch { line = e.data; }
     termLine(line, classifyLine(line));
+    currentJob.logCount++;
   };
-  es.onerror = () => { es.close(); };
+
+  es.onerror = () => {
+    es.close();
+    if (!currentJob || currentJob.done || currentJob.id !== job_id) return;
+    termLine('[Connection lost — reconnecting in 3s…]', 'sys');
+    setTimeout(() => {
+      if (currentJob?.id === job_id && !currentJob.done) {
+        openLogStream(job_id, currentJob.logCount);
+      }
+    }, 3000);
+  };
 }
 
 async function refreshJobStatus(job_id) {
@@ -654,19 +989,28 @@ async function refreshJobStatus(job_id) {
   const data = await res.json();
   const s    = data.status;
 
+  if (currentJob) currentJob.done = true;
+  stopElapsedTimer();
+  const elapsed = document.getElementById('tb-elapsed').textContent;
   if (s === 'done') {
     setJobStatus('done', 'Completed');
     document.getElementById('btn-dl').disabled   = false;
     document.getElementById('btn-view').disabled = false;
+    showToast(`Job completed${elapsed ? ' in ' + elapsed : ''} ✓`, 'success');
   } else if (s === 'timeout') {
     setJobStatus('timeout', 'Timed Out');
+    showToast('Job timed out', 'error');
   } else {
     setJobStatus('failed', 'Failed');
+    showToast('Job failed', 'error');
   }
   resetRunBtn();
+  refreshQuota();
+  loadJobHistory();
 }
 
 async function stopJob() {
+  if (currentJob) currentJob.done = true;
   if (currentJob?.es) currentJob.es.close();
   if (currentJob?.id) {
     try {
@@ -676,9 +1020,12 @@ async function stopJob() {
       });
     } catch {}
   }
+  stopElapsedTimer();
   termLine('[Stopped by user]', 'sys');
   setJobStatus('failed', 'Stopped');
+  showToast('Job stopped', 'info');
   resetRunBtn();
+  loadJobHistory();
 }
 
 function resetRunBtn() {
@@ -691,72 +1038,158 @@ async function downloadResult() {
   window.open(`/jobs/${currentJob.id}/results?token=${encodeURIComponent(token)}`, '_blank');
 }
 
-// ── Results viewer ─────────────────────────────────────────────────────────
-async function openResultsModal() {
-  if (!currentJob?.id) return;
-  document.getElementById('results-title').textContent = 'Results';
-  document.getElementById('results-filelist').innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted)">Loading…</div>';
-  document.getElementById('results-preview').innerHTML  = '<span class="results-empty">Select a file to preview</span>';
-  document.getElementById('results-modal').classList.add('open');
-
-  const res = await api('GET', `/jobs/${currentJob.id}/files`);
-  if (!res || !res.ok) return;
-  const files = await res.json();
-
-  const list = document.getElementById('results-filelist');
-  if (!files.length) {
-    list.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted)">No output files.</div>';
-    return;
-  }
-
-  list.innerHTML = '';
-  files.forEach(f => {
-    const icon = f.is_image ? '🖼' : f.is_text ? '📄' : '📦';
-    const size = f.size < 1024 ? `${f.size}B` : f.size < 1048576 ? `${(f.size/1024).toFixed(1)}K` : `${(f.size/1048576).toFixed(1)}M`;
-    const div  = document.createElement('div');
-    div.className = 'results-file';
-    div.innerHTML = `<span class="rf-icon">${icon}</span>
-      <span class="rf-name" title="${esc(f.name)}">${esc(f.name)}</span>
-      <span class="rf-size">${size}</span>`;
-    div.onclick = () => previewFile(f, div);
-    list.appendChild(div);
-
-    // Auto-preview first image
-    if (f.is_image && list.querySelectorAll('.results-file.active').length === 0) {
-      div.click();
-    }
-  });
-}
-
-async function previewFile(f, el) {
-  document.querySelectorAll('.results-file').forEach(e => e.classList.remove('active'));
-  el.classList.add('active');
-
-  const preview = document.getElementById('results-preview');
-  const url = `/jobs/${currentJob.id}/files/${encodeURIComponent(f.path)}?token=${encodeURIComponent(token)}`;
-
-  if (f.is_image) {
-    preview.innerHTML = `<img src="${url}" alt="${esc(f.name)}">`;
-  } else if (f.is_text) {
-    preview.innerHTML = '<span class="results-empty">Loading…</span>';
-    const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-    const text = await res.text();
-    preview.innerHTML = `<pre>${esc(text)}</pre>`;
-  } else {
-    preview.innerHTML = `<div class="results-empty">
-      <div style="margin-bottom:12px">Binary file — cannot preview</div>
-      <a href="${url}" download="${esc(f.name)}" style="color:var(--blue)">↓ Download file</a>
-    </div>`;
-  }
-}
-
-function closeResultsModal() {
-  document.getElementById('results-modal').classList.remove('open');
-}
 
 document.getElementById('results-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('results-modal')) closeResultsModal();
 });
+
+// ── Hardware queue ─────────────────────────────────────────────────────────
+let queueTimer = null;
+let lastQueueData = null;
+
+async function pollQueue() {
+  const res = await api('GET', '/queue');
+  if (!res || !res.ok) return;
+  lastQueueData = await res.json();
+  updateHwStatus(lastQueueData);
+}
+
+function updateHwStatus(data) {
+  const { running, queue } = data;
+  const dot = document.getElementById('hw-dot');
+  const lbl = document.getElementById('hw-label');
+  if (!dot) return;
+
+  const myRunning = running?.is_mine;
+  const myQueued  = queue.find(j => j.is_mine);
+
+  if (myRunning) {
+    dot.className    = 'hw-dot-hw mine';
+    lbl.textContent  = 'Your job is running';
+  } else if (myQueued) {
+    const eta = myQueued.eta_s ? ` · ~${fmtSecs(myQueued.eta_s)}` : '';
+    dot.className    = 'hw-dot-hw queued';
+    lbl.textContent  = `Queue #${myQueued.position} of ${queue.length}${eta}`;
+  } else if (running) {
+    dot.className    = 'hw-dot-hw busy';
+    lbl.textContent  = queue.length
+      ? `Hardware busy · ${queue.length} waiting`
+      : 'Hardware busy';
+  } else {
+    dot.className    = 'hw-dot-hw ready';
+    lbl.textContent  = 'Hardware: Ready';
+  }
+}
+
+function startQueuePolling() {
+  pollQueue();
+  queueTimer = setInterval(pollQueue, 4000);
+}
+
+function stopQueuePolling() {
+  if (queueTimer) { clearInterval(queueTimer); queueTimer = null; }
+}
+
+async function openQueueModal() {
+  document.getElementById('queue-modal').classList.add('open');
+  renderQueueModal(lastQueueData);
+  await pollQueue();
+  renderQueueModal(lastQueueData);
+  loadHwChart();
+}
+
+function closeQueueModal() {
+  document.getElementById('queue-modal').classList.remove('open');
+}
+
+function renderQueueModal(data) {
+  const content = document.getElementById('queue-content');
+  if (!data) { content.innerHTML = '<div class="queue-empty">Loading…</div>'; return; }
+
+  const { running, queue, avg_duration_s } = data;
+
+  if (!running && !queue.length) {
+    content.innerHTML = '<div class="queue-empty">Hardware is idle — no jobs running or waiting.</div>';
+    return;
+  }
+
+  let html = '';
+
+  if (running) {
+    const dur  = running.started_at ? fmtDuration(running.started_at) : '—';
+    const mine = running.is_mine;
+    html += `<div class="queue-slot">
+      <div class="queue-slot-top">
+        <span class="q-badge q-running">Running</span>
+        ${mine ? '<span class="q-badge q-mine">You</span>' : ''}
+        <span class="queue-slot-user">${esc(running.username)}</span>
+      </div>
+      <div class="queue-slot-meta">${esc(running.filename)} · ${dur}</div>
+    </div>`;
+  }
+
+  queue.forEach(j => {
+    const mine = j.is_mine;
+    const eta  = j.eta_s ? ` · ETA ~${fmtSecs(j.eta_s)}` : '';
+    html += `<div class="queue-slot">
+      <div class="queue-slot-top">
+        <span class="q-badge q-pos">#${j.position}</span>
+        ${mine ? '<span class="q-badge q-mine">You</span>' : ''}
+        <span class="queue-slot-user">${esc(j.username)}</span>
+      </div>
+      <div class="queue-slot-meta">${esc(j.filename)}${eta}</div>
+    </div>`;
+  });
+
+  if (avg_duration_s) {
+    html += `<div style="font-size:10px;color:var(--muted);text-align:right;padding-top:2px">
+      avg job: ${fmtSecs(avg_duration_s)}
+    </div>`;
+  }
+
+  content.innerHTML = html;
+}
+
+document.getElementById('queue-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('queue-modal')) closeQueueModal();
+});
+
+async function loadHwChart() {
+  const wrap = document.getElementById('hw-chart-wrap');
+  const res  = await api('GET', '/queue/stats');
+  if (!res || !res.ok) return;
+  const s = await res.json();
+
+  const hours = s.hours_busy_minutes;
+  const maxV  = Math.max(...hours, 0.1);
+  const bars  = hours.map((v, i) => {
+    const h   = Math.round((v / maxV) * 48);
+    const col = v > 0.5 ? 'var(--blue)' : '#21262d';
+    const tip = `${23 - i}h ago: ${v.toFixed(1)} min`;
+    return `<div class="hw-chart-bar" title="${tip}" style="height:${Math.max(h, v > 0.1 ? 2 : 0)}px;background:${col};opacity:${v > 0.1 ? 0.75 : 1}"></div>`;
+  }).join('');
+
+  wrap.style.display = '';
+  wrap.innerHTML = `
+    <div class="hw-chart-title">Hardware utilization — last 24 hours</div>
+    <div class="hw-chart-bars">${bars}</div>
+    <div class="hw-chart-axis"><span>24h ago</span><span>12h ago</span><span>now</span></div>
+    <div class="hw-chart-stats">
+      <span>Jobs: <b>${s.total_jobs_24h}</b></span>
+      <span>Busy: <b>${s.total_minutes_24h} min</b></span>
+      <span>Utilization: <b>${s.utilization_pct}%</b></span>
+    </div>`;
+}
+
+function fmtDuration(startedAt) {
+  const secs = Math.floor((Date.now() - new Date(startedAt + 'Z').getTime()) / 1000);
+  return fmtSecs(secs);
+}
+
+function fmtSecs(secs) {
+  if (secs < 60) return `${secs}s`;
+  return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+}
 
 // ── Terminal helpers ───────────────────────────────────────────────────────
 function termLine(text, cls = '') {
@@ -791,6 +1224,353 @@ function setJobStatus(state, label) {
   lbl.textContent = label;
 }
 
+// ── Admin panel ────────────────────────────────────────────────────────────
+let adminTab = 'queue';
+
+function openAdminPanel() {
+  document.getElementById('admin-modal').classList.add('open');
+  loadAdminTab(adminTab);
+}
+function closeAdminPanel() {
+  document.getElementById('admin-modal').classList.remove('open');
+}
+function switchAdminTab(tab) {
+  adminTab = tab;
+  document.querySelectorAll('.admin-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.atab === tab));
+  loadAdminTab(tab);
+}
+
+async function loadAdminTab(tab) {
+  const content = document.getElementById('admin-content');
+  content.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:12px">Loading…</div>';
+  if (tab === 'queue')    await renderAdminQueue(content);
+  else if (tab === 'env') await renderAdminEnv(content);
+  else                    await renderAdminUsers(content);
+}
+
+async function renderAdminQueue(content) {
+  const res = await api('GET', '/admin/queue');
+  if (!res || !res.ok) { content.innerHTML = '<div style="padding:16px;color:var(--red)">Access denied or error.</div>'; return; }
+  const { running, queue } = await res.json();
+
+  let html = '<table class="admin-table"><thead><tr><th>Status</th><th>User</th><th>File</th><th>Started</th><th>Action</th></tr></thead><tbody>';
+
+  if (running) {
+    const dur = running.started_at ? fmtDuration(running.started_at) : '—';
+    html += `<tr>
+      <td><span class="status-dot running" style="display:inline-block"></span> Running</td>
+      <td><b>${esc(running.username||'—')}</b></td>
+      <td>${esc(running.filename||'—')}</td>
+      <td>${dur}</td>
+      <td><button class="btn-admin btn-kill" onclick="adminKill('${running.job_id}')">■ Kill</button></td>
+    </tr>`;
+  }
+
+  queue.forEach(j => {
+    html += `<tr>
+      <td><span class="status-dot" style="display:inline-block;background:var(--yellow)"></span> #${j.position}</td>
+      <td>${esc(j.username||'—')}</td>
+      <td>${esc(j.filename||'—')}</td>
+      <td>${j.queued_at ? new Date(j.queued_at+'Z').toLocaleTimeString() : '—'}</td>
+      <td><button class="btn-admin btn-kill" onclick="adminKill('${j.job_id}')">✕ Remove</button></td>
+    </tr>`;
+  });
+
+  if (!running && !queue.length) {
+    html += '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Hardware idle — no jobs.</td></tr>';
+  }
+
+  html += '</tbody></table>';
+  content.innerHTML = html;
+}
+
+async function renderAdminUsers(content) {
+  const res = await api('GET', '/admin/users');
+  if (!res || !res.ok) { content.innerHTML = '<div style="padding:16px;color:var(--red)">Access denied.</div>'; return; }
+  const users = await res.json();
+
+  let html = '<table class="admin-table"><thead><tr><th>Username</th><th>Email</th><th>Registered</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  users.forEach(u => {
+    const badges = [
+      u.is_admin    ? '<span class="badge-admin">ADMIN</span>' : '',
+      !u.is_active  ? '<span class="badge-inactive">INACTIVE</span>' : '',
+    ].filter(Boolean).join(' ');
+    html += `<tr>
+      <td><b>${esc(u.username)}</b> ${badges}</td>
+      <td style="color:var(--muted)">${esc(u.email)}</td>
+      <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString()}</td>
+      <td>${u.is_active ? '<span style="color:var(--green)">Active</span>' : '<span style="color:var(--muted)">Inactive</span>'}</td>
+      <td>${u.is_admin ? '' : `<button class="btn-admin ${u.is_active ? 'btn-kill' : 'btn-toggle-on'}"
+          onclick="adminToggleUser(${u.id})">${u.is_active ? 'Deactivate' : 'Activate'}</button>`}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  content.innerHTML = html;
+}
+
+async function renderAdminEnv(content) {
+  const res = await api('GET', '/env/info');
+  if (!res || !res.ok) { content.innerHTML = '<div style="padding:16px;color:var(--red)">Error fetching env info.</div>'; return; }
+  const env = await res.json();
+
+  const pkgs = (env.key_packages || []).map(p =>
+    `<tr><td>${esc(p.name)}</td><td style="color:var(--blue)">${esc(p.version)}</td></tr>`
+  ).join('');
+
+  content.innerHTML = `
+    <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:grid;grid-template-columns:140px 1fr;gap:8px 12px;font-size:12px">
+        <div style="color:var(--muted)">Python version</div><div style="font-family:monospace">${esc(env.python_version||'—')}</div>
+        <div style="color:var(--muted)">Executable</div><div style="font-family:monospace;font-size:10px;word-break:break-all">${esc(env.executable||'—')}</div>
+        <div style="color:var(--muted)">Total packages</div><div>${env.total_packages ?? '—'}</div>
+        <div style="color:var(--muted)">Captured at</div><div>${env.captured_at ? new Date(env.captured_at+'Z').toLocaleString() : '—'}</div>
+      </div>
+      <table class="admin-table">
+        <thead><tr><th>Package</th><th>Version</th></tr></thead>
+        <tbody>${pkgs || '<tr><td colspan="2" style="color:var(--muted);text-align:center;padding:12px">No key packages found</td></tr>'}</tbody>
+      </table>
+      <button class="btn-tb btn-save" style="align-self:flex-start;font-size:11px" onclick="refreshEnvCache()">↺ Refresh Cache</button>
+    </div>`;
+}
+
+async function refreshEnvCache() {
+  const r1 = await api('DELETE', '/env/info/cache');
+  if (!r1 || !r1.ok) { showToast('Cache clear failed', 'error'); return; }
+  showToast('Recapturing environment info…', 'info', 2000);
+  await api('GET', '/env/info');  // re-trigger capture
+  showToast('Environment cache refreshed', 'success');
+  loadAdminTab('env');
+}
+
+async function adminKill(jobId) {
+  if (!confirm(`Kill job ${jobId.slice(0,8)}?`)) return;
+  const res = await api('POST', `/admin/jobs/${jobId}/kill`);
+  if (res && res.ok) { showToast('Job killed', 'info'); loadAdminTab('queue'); }
+  else showToast('Kill failed', 'error');
+}
+
+async function adminToggleUser(userId) {
+  const res = await api('POST', `/admin/users/${userId}/toggle`);
+  if (res && res.ok) {
+    const d = await res.json();
+    showToast(`${d.username} ${d.is_active ? 'activated' : 'deactivated'}`, 'info');
+    loadAdminTab('users');
+  }
+}
+
+document.getElementById('admin-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('admin-modal')) closeAdminPanel();
+});
+
+// ── Toast notifications ────────────────────────────────────────────────────
+function showToast(msg, type = 'info', duration = 3500) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => {
+    t.classList.add('out');
+    t.addEventListener('animationend', () => t.remove(), { once: true });
+  }, duration);
+}
+
+// ── Copy terminal ──────────────────────────────────────────────────────────
+function copyTerminal() {
+  const lines = [...document.querySelectorAll('#term-out .l')].map(l => l.textContent).join('\n');
+  if (!lines) return;
+  navigator.clipboard.writeText(lines).then(() => showToast('Output copied to clipboard', 'info'));
+}
+
+// ── Font size ──────────────────────────────────────────────────────────────
+let editorFontSize = 14;
+function changeFontSize(delta) {
+  editorFontSize = Math.min(28, Math.max(8, editorFontSize + delta));
+  editor?.updateOptions({ fontSize: editorFontSize });
+}
+
+// ── Job history ────────────────────────────────────────────────────────────
+async function loadJobHistory() {
+  const res = await api('GET', '/jobs');
+  if (!res || !res.ok) return;
+  const jobs = await res.json();
+  renderJobHistory(jobs);
+}
+
+function renderJobHistory(jobs) {
+  lastJobHistory = jobs;
+  const el = document.getElementById('job-hist-list');
+  if (!jobs.length) { el.innerHTML = '<div class="sidebar-empty">No jobs yet</div>'; return; }
+  el.innerHTML = '';
+  jobs.slice(0, 20).forEach(j => {
+    const dur = j.duration_s ? ` · ${fmtSecs(Math.round(parseFloat(j.duration_s)))}` : '';
+    const isSelected = compareBase?.job_id === j.job_id;
+    const div = document.createElement('div');
+    div.className = 'sidebar-item';
+    div.dataset.jobId = j.job_id;
+    div.innerHTML = `
+      <span class="job-hist-dot ${j.status}"></span>
+      <span class="si-text" title="${esc(j.filename)}">${esc(j.filename)}</span>
+      <span style="color:var(--muted);font-size:10px;flex-shrink:0">${dur}</span>
+      ${j.status === 'done' ? `<button class="btn-compare${isSelected ? ' selected' : ''}" title="Compare" onclick="event.stopPropagation();pickForCompare('${j.job_id}','${esc(j.filename)}')">⊕</button>` : ''}`;
+    div.onclick = () => openResultsModal(j.job_id);
+    el.appendChild(div);
+  });
+}
+
+// ── Results viewer ─────────────────────────────────────────────────────────
+let resultsJobId = null;
+
+function switchResultsTab(tab) {
+  document.querySelectorAll('.results-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('results-files-panel').style.display = tab === 'files' ? '' : 'none';
+  document.getElementById('results-info-panel').style.display  = tab === 'info'  ? '' : 'none';
+  if (tab === 'info' && resultsJobId) loadJobInfo(resultsJobId);
+}
+
+async function openResultsModal(jobId) {
+  resultsJobId = jobId || currentJob?.id;
+  if (!resultsJobId) return;
+
+  switchResultsTab('files');
+  document.getElementById('results-title').textContent = 'Results';
+  document.getElementById('results-filelist').innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted)">Loading…</div>';
+  document.getElementById('results-preview').innerHTML  = '<span class="results-empty">Select a file to preview</span>';
+  document.getElementById('results-info-panel').innerHTML = '';
+  document.getElementById('results-modal').classList.add('open');
+
+  const res = await api('GET', `/jobs/${resultsJobId}/files`);
+  if (!res || !res.ok) return;
+  const files = await res.json();
+
+  const list = document.getElementById('results-filelist');
+  if (!files.length) {
+    list.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted)">No output files.</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  files.forEach(f => {
+    const icon = f.is_image ? '🖼' : f.is_text ? '📄' : '📦';
+    const size = f.size < 1024 ? `${f.size}B` : f.size < 1048576 ? `${(f.size/1024).toFixed(1)}K` : `${(f.size/1048576).toFixed(1)}M`;
+    const div  = document.createElement('div');
+    div.className = 'results-file';
+    div.innerHTML = `<span class="rf-icon">${icon}</span>
+      <span class="rf-name" title="${esc(f.name)}">${esc(f.name)}</span>
+      <span class="rf-size">${size}</span>`;
+    div.onclick = () => previewFile(f, div);
+    list.appendChild(div);
+    if (f.is_image && list.querySelectorAll('.results-file.active').length === 0) div.click();
+  });
+}
+
+async function previewFile(f, el) {
+  document.querySelectorAll('.results-file').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+
+  const preview = document.getElementById('results-preview');
+  const url = `/jobs/${resultsJobId}/files/${encodeURIComponent(f.path)}?token=${encodeURIComponent(token)}`;
+
+  if (f.is_image) {
+    preview.innerHTML = `<img src="${url}" alt="${esc(f.name)}">`;
+  } else if (f.is_text) {
+    preview.innerHTML = '<span class="results-empty">Loading…</span>';
+    const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    const text = await res.text();
+    preview.innerHTML = `<pre>${esc(text)}</pre>`;
+  } else {
+    preview.innerHTML = `<div class="results-empty">
+      <div style="margin-bottom:12px">Binary file — cannot preview</div>
+      <a href="${url}" download="${esc(f.name)}" style="color:var(--blue)">↓ Download file</a>
+    </div>`;
+  }
+}
+
+async function loadJobInfo(jobId) {
+  const panel = document.getElementById('results-info-panel');
+  panel.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12px">Loading…</div>';
+
+  const [jobRes, envRes] = await Promise.all([
+    api('GET', `/jobs/${jobId}/status`),
+    api('GET', '/env/info'),
+  ]);
+  if (!jobRes || !jobRes.ok) return;
+  const d   = await jobRes.json();
+  const env = (envRes && envRes.ok) ? await envRes.json() : null;
+
+  const dur         = d.duration_s ? fmtSecs(Math.round(parseFloat(d.duration_s))) : '—';
+  const statusColor = d.status === 'done' ? 'var(--green)' : d.status === 'running' ? 'var(--blue)' : 'var(--red)';
+
+  const jobRows = [
+    ['Status',    `<span style="color:${statusColor};font-weight:600">${d.status}</span>`],
+    ['Filename',  esc(d.filename || '—')],
+    ['Duration',  dur],
+    ['Exit code', d.returncode ?? '—'],
+    ['Queued',    d.queued_at    ? new Date(d.queued_at    + 'Z').toLocaleString() : '—'],
+    ['Started',   d.started_at   ? new Date(d.started_at   + 'Z').toLocaleString() : '—'],
+    ['Completed', d.completed_at ? new Date(d.completed_at + 'Z').toLocaleString() : '—'],
+    ['Job ID',    `<span style="font-size:10px">${jobId}</span>`],
+  ];
+
+  let html = jobRows.map(([label, val]) =>
+    `<div class="job-info-label">${label}</div><div class="job-info-value">${val}</div>`
+  ).join('');
+
+  if (env) {
+    html += `<div class="job-info-label" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border2);grid-column:1/-1;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Environment</div><div></div>`;
+    html += `<div class="job-info-label">Python</div><div class="job-info-value">${esc((env.python_version||'').split(' ')[0])}</div>`;
+    html += `<div class="job-info-label">Executable</div><div class="job-info-value" style="font-size:10px">${esc(env.executable||'—')}</div>`;
+    html += `<div class="job-info-label">Total pkgs</div><div class="job-info-value">${env.total_packages ?? '—'}</div>`;
+
+    if (env.key_packages && env.key_packages.length) {
+      const pkgList = env.key_packages.map(p => `<span title="${esc(p.name)}" style="display:inline-block;background:var(--border2);border-radius:4px;padding:1px 6px;margin:2px;font-size:10px">${esc(p.name)} ${esc(p.version)}</span>`).join('');
+      html += `<div class="job-info-label">Key packages</div><div class="job-info-value">${pkgList}</div>`;
+    }
+  }
+
+  html += `<div style="grid-column:1/-1;margin-top:12px">
+    <button class="btn-tb btn-save" style="font-size:11px" onclick="exportJobMetadata('${jobId}')">↓ Export Metadata JSON</button>
+  </div>`;
+
+  panel.innerHTML = html;
+}
+
+async function exportJobMetadata(jobId) {
+  const [jobRes, envRes] = await Promise.all([
+    api('GET', `/jobs/${jobId}/status`),
+    api('GET', '/env/info'),
+  ]);
+  const job = jobRes && jobRes.ok ? await jobRes.json() : {};
+  const env = envRes && envRes.ok ? await envRes.json() : {};
+
+  const metadata = {
+    exported_at:   new Date().toISOString(),
+    platform:      "SpiNNaker2 Playground",
+    job_id:        jobId,
+    job:           job,
+    environment:   env,
+  };
+
+  const blob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `spinnaker2_job_${jobId.slice(0, 8)}_metadata.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Metadata exported', 'success');
+}
+
+function closeResultsModal() {
+  document.getElementById('results-modal').classList.remove('open');
+}
+
+document.getElementById('results-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('results-modal')) closeResultsModal();
+});
+
 // ── Utils ──────────────────────────────────────────────────────────────────
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -800,22 +1580,298 @@ function esc(s) {
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
   if ((e.ctrlKey || e.metaKey) && e.key === 's')     { e.preventDefault(); openSaveModal(); }
-  if (e.key === 'Escape') { closeSaveModal(); closeResultsModal(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'b')     { e.preventDefault(); toggleSidebar(); }
+  if (e.key === 'Escape') { closeSaveModal(); closeResultsModal(); closeQueueModal(); closeAdminPanel(); closeHelpModal(); closeCompareModal(); closeShareDialog(); }
 });
+
+// ── Auto-save ──────────────────────────────────────────────────────────────
+const AUTOSAVE_KEY = 'spinnaker2_autosave';
+let autoSaveTimer  = null;
+
+function scheduleAutoSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    const code = editor?.getValue();
+    if (code) localStorage.setItem(AUTOSAVE_KEY, code);
+  }, 1200);
+}
+
+function restoreAutoSave() {
+  const saved = localStorage.getItem(AUTOSAVE_KEY);
+  if (!saved || !editor) return;
+  const current = editor.getValue().trim();
+  const defaultSnippet = '# Write your SpiNNaker2 code here';
+  if (current === '' || current.startsWith(defaultSnippet)) {
+    editor.setValue(saved);
+    termLine('[Auto-save restored]', 'sys');
+  }
+}
+
+// ── Quota display ──────────────────────────────────────────────────────────
+async function refreshQuota() {
+  const res = await api('GET', '/jobs/quota');
+  if (!res || !res.ok) return;
+  const { used, limit, resets_in } = await res.json();
+  const badge = document.getElementById('quota-badge');
+  if (!badge) return;
+  badge.textContent = `${used}/${limit} jobs`;
+  const pct = used / limit;
+  badge.className = 'quota-badge' + (pct >= 1 ? ' full' : pct >= 0.7 ? ' warn' : '');
+  const mins = Math.ceil(resets_in / 60);
+  badge.title = `${used} of ${limit} jobs used this hour${resets_in > 0 ? ` · resets in ${mins}m` : ''}`;
+}
+
+// ── Sidebar toggle ─────────────────────────────────────────────────────────
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('collapsed');
+  if (editor) editor.layout();
+}
+
+// ── Open local .py file ────────────────────────────────────────────────────
+function handleFileInput(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  loadFile(file);
+  e.target.value = '';
+}
+
+function loadFile(file) {
+  if (!file.name.endsWith('.py')) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    editor?.setValue(ev.target.result);
+    document.getElementById('filename').value = file.name;
+    currentCode = null;
+  };
+  reader.readAsText(file);
+}
+
+// Drag & drop on editor
+const editorWrap = document.getElementById('editor-wrap');
+const dropOverlay = document.getElementById('editor-drop-overlay');
+
+editorWrap.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropOverlay.classList.add('active');
+});
+editorWrap.addEventListener('dragleave', e => {
+  if (!editorWrap.contains(e.relatedTarget)) dropOverlay.classList.remove('active');
+});
+editorWrap.addEventListener('drop', e => {
+  e.preventDefault();
+  dropOverlay.classList.remove('active');
+  const file = e.dataTransfer.files[0];
+  if (file) loadFile(file);
+});
+
+// ── Terminal resize ─────────────────────────────────────────────────────────
+(function() {
+  const handle   = document.getElementById('term-resize-handle');
+  const terminal = document.getElementById('terminal');
+  let dragging = false, startY = 0, startH = 0;
+
+  handle.addEventListener('mousedown', e => {
+    dragging = true;
+    startY   = e.clientY;
+    startH   = terminal.offsetHeight;
+    handle.classList.add('dragging');
+    document.body.style.cursor    = 'ns-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const delta  = startY - e.clientY;           // drag up = bigger terminal
+    const newH   = Math.min(Math.max(60, startH + delta), window.innerHeight * 0.75);
+    terminal.style.height = newH + 'px';
+    if (editor) editor.layout();
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor    = '';
+    document.body.style.userSelect = '';
+  });
+})();
+
+// ── Elapsed timer ──────────────────────────────────────────────────────────
+let elapsedTimer = null;
+let elapsedStart = null;
+
+function startElapsedTimer() {
+  elapsedStart = Date.now();
+  const el = document.getElementById('tb-elapsed');
+  el.textContent = '0s';
+  elapsedTimer = setInterval(() => {
+    const secs = Math.floor((Date.now() - elapsedStart) / 1000);
+    el.textContent = fmtSecs(secs);
+  }, 1000);
+}
+
+function stopElapsedTimer() {
+  if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+}
+
+// ── Help modal ─────────────────────────────────────────────────────────────
+function openHelpModal() { document.getElementById('help-modal').classList.add('open'); }
+function closeHelpModal() { document.getElementById('help-modal').classList.remove('open'); }
+
+// ── Registration availability ───────────────────────────────────────────────
+async function checkRegistration() {
+  try {
+    const res = await fetch('/auth/config');
+    if (!res.ok) return;
+    const { allow_registration } = await res.json();
+    if (!allow_registration) {
+      document.getElementById('tab-register').style.display = 'none';
+    }
+  } catch {}
+}
+
+// ── User stats ──────────────────────────────────────────────────────────────
+async function loadUserStats() {
+  const res = await api('GET', '/users/me/stats');
+  if (!res || !res.ok) return;
+  const s = await res.json();
+  const el = document.getElementById('user-stats');
+  const avgStr = s.avg_duration_s ? fmtSecs(s.avg_duration_s) : '—';
+  el.innerHTML = `
+    <div class="user-stat"><div class="user-stat-val">${s.total}</div><div class="user-stat-lbl">Total</div></div>
+    <div class="user-stat"><div class="user-stat-val" style="color:var(--green)">${s.done}</div><div class="user-stat-lbl">Done</div></div>
+    <div class="user-stat"><div class="user-stat-val" style="color:var(--red)">${s.failed}</div><div class="user-stat-lbl">Failed</div></div>
+    <div class="user-stat"><div class="user-stat-val">${avgStr}</div><div class="user-stat-lbl">Avg</div></div>`;
+  // Also fill quota hint in help modal
+  document.getElementById('help-quota-limit').textContent = '10';
+}
+
+// ── Share code ─────────────────────────────────────────────────────────────
+async function shareCode() {
+  const code = editor?.getValue();
+  if (!code || !code.trim()) { showToast('Editor is empty', 'error'); return; }
+  const title = document.getElementById('filename').value || 'untitled.py';
+  const res = await api('POST', '/share', { code, title });
+  if (!res || !res.ok) { showToast('Failed to create share link', 'error'); return; }
+  const { share_id } = await res.json();
+  const url = `${location.origin}/?share=${share_id}`;
+  document.getElementById('share-url').value = url;
+  document.getElementById('share-dialog').style.display = 'flex';
+}
+
+function closeShareDialog() {
+  document.getElementById('share-dialog').style.display = 'none';
+}
+
+function copyShareUrl() {
+  const input = document.getElementById('share-url');
+  input.select();
+  navigator.clipboard.writeText(input.value).then(
+    () => showToast('Link copied!', 'success'),
+    () => { document.execCommand('copy'); showToast('Link copied!', 'success'); }
+  );
+}
+
+async function checkSharedCode() {
+  const shareId = new URLSearchParams(location.search).get('share');
+  if (!shareId) return;
+  const res = await fetch(`/share/${shareId}`);
+  if (!res.ok) { showToast('Share link not found or expired', 'error'); return; }
+  const { code, title } = await res.json();
+  editor?.setValue(code);
+  document.getElementById('filename').value = title.endsWith('.py') ? title : title + '.py';
+  history.replaceState(null, '', '/');   // clean URL
+  showToast(`Loaded shared code: ${title}`, 'success');
+}
+
+// ── Compare runs ────────────────────────────────────────────────────────────
+function pickForCompare(jobId, filename) {
+  if (!compareBase) {
+    compareBase = { job_id: jobId, filename };
+    renderJobHistory(lastJobHistory);
+    showToast(`"${filename}" selected — pick a second job to compare`, 'info');
+  } else if (compareBase.job_id === jobId) {
+    compareBase = null;
+    renderJobHistory(lastJobHistory);
+    showToast('Compare cancelled', 'info');
+  } else {
+    const second = { job_id: jobId, filename };
+    openCompareModal(compareBase, second);
+    compareBase = null;
+  }
+}
+
+async function openCompareModal(jobA, jobB) {
+  document.getElementById('compare-modal').classList.add('open');
+  const [filesA, filesB] = await Promise.all([
+    api('GET', `/jobs/${jobA.job_id}/files`).then(r => r?.json() ?? []),
+    api('GET', `/jobs/${jobB.job_id}/files`).then(r => r?.json() ?? []),
+  ]);
+  renderComparePanel('left',  jobA.job_id, jobA.filename, filesA);
+  renderComparePanel('right', jobB.job_id, jobB.filename, filesB);
+}
+
+function renderComparePanel(side, jobId, filename, files) {
+  document.getElementById(`compare-head-${side}`).innerHTML =
+    `<strong>${esc(filename)}</strong><span style="margin-left:auto;font-size:10px">${files.length} file(s)</span>`;
+  const listEl    = document.getElementById(`compare-files-${side}`);
+  const previewEl = document.getElementById(`compare-preview-${side}`);
+
+  if (!files.length) {
+    listEl.innerHTML    = '<div style="padding:10px;font-size:11px;color:var(--muted);text-align:center">No output files</div>';
+    previewEl.innerHTML = '<span class="compare-empty">No files</span>';
+    return;
+  }
+
+  listEl.innerHTML = '';
+  files.forEach(f => {
+    const item = document.createElement('div');
+    item.className = 'results-file';
+    item.innerHTML = `<span class="rf-icon">${f.is_image ? '🖼' : '📄'}</span><span class="rf-name" title="${esc(f.name)}">${esc(f.name)}</span>`;
+    item.onclick = () => { previewCompareFile(jobId, f, previewEl, listEl, item); };
+    listEl.appendChild(item);
+  });
+
+  // Auto-select first image, fallback to first file
+  const auto = files.find(f => f.is_image) || files[0];
+  if (auto) {
+    const first = listEl.querySelector('.results-file');
+    const target = [...listEl.querySelectorAll('.results-file')].find(el => el.querySelector('.rf-name').title === auto.name) || first;
+    previewCompareFile(jobId, auto, previewEl, listEl, target);
+  }
+}
+
+async function previewCompareFile(jobId, file, previewEl, listEl, activeItem) {
+  listEl.querySelectorAll('.results-file').forEach(el => el.classList.remove('active'));
+  activeItem?.classList.add('active');
+  const url = `/jobs/${jobId}/files/${encodeURIComponent(file.path)}?token=${encodeURIComponent(token)}`;
+  if (file.is_image) {
+    previewEl.innerHTML = `<img src="${url}" alt="${esc(file.name)}">`;
+  } else if (file.is_text) {
+    previewEl.innerHTML = '<span class="compare-empty">Loading…</span>';
+    const r = await fetch(url);
+    const text = await r.text();
+    previewEl.innerHTML = `<pre>${esc(text.slice(0, 20000))}</pre>`;
+  } else {
+    previewEl.innerHTML = `<span class="compare-empty">${esc(file.name)} (binary)</span>`;
+  }
+}
+
+function closeCompareModal() {
+  document.getElementById('compare-modal').classList.remove('open');
+  compareBase = null;
+  renderJobHistory(lastJobHistory);
+}
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 (async () => {
+  await checkRegistration();
   if (token) {
     const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
     if (res.ok) { await enterApp(); return; }
     localStorage.removeItem('token');
     token = '';
   }
-  // Kayıt açık mı? Yoksa tab'ı gizle.
-  try {
-    const res = await fetch('/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
-    // sadece bağlantı testi
-  } catch {}
 })();
 </script>
 </body>

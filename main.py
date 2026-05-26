@@ -1,6 +1,10 @@
+import asyncio
 import json
 import os
+import secrets
 import signal
+import subprocess as _subprocess
+import sys
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -33,6 +37,7 @@ for d in (UPLOAD_DIR, RESULTS_DIR, TEMPLATE_DIR):
 ALLOW_REGISTRATION = os.getenv("ALLOW_REGISTRATION", "true").lower() == "true"
 MAX_JOBS_PER_HOUR  = int(os.getenv("MAX_JOBS_PER_HOUR", "10"))
 MAX_UPLOAD_BYTES   = 1 * 1024 * 1024   # 1 MB
+ADMIN_USERS        = {u.strip() for u in os.getenv("ADMIN_USERS", "").split(",") if u.strip()}
 
 redis_async: aioredis.Redis = None
 
@@ -42,6 +47,20 @@ async def lifespan(app: FastAPI):
     global redis_async
     await init_db()
     redis_async = aioredis.from_url("redis://localhost:6379", decode_responses=True)
+
+    # Self-heal: if hw_running points to a job that was mid-run when the worker
+    # restarted, that job will never complete on its own — mark it failed now.
+    stale_id = await redis_async.get("hw_running")
+    if stale_id:
+        job_data = await redis_async.hgetall(f"job:{stale_id}")
+        if job_data and job_data.get("status") == "running":
+            await redis_async.hset(f"job:{stale_id}", mapping={
+                "status":       "failed",
+                "completed_at": datetime.utcnow().isoformat(),
+            })
+            await redis_async.delete("hw_running")
+            await redis_async.publish("queue_channel", "update")
+
     yield
     await redis_async.aclose()
 
@@ -146,6 +165,25 @@ class CodeUpdateIn(BaseModel):
     code:  str | None = None
 
 
+class ShareIn(BaseModel):
+    code:  str
+    title: str = "untitled"
+
+    @field_validator("code")
+    @classmethod
+    def code_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Code cannot be empty")
+        if len(v) > 100_000:
+            raise ValueError("Code too large (max 100 KB)")
+        return v
+
+    @field_validator("title")
+    @classmethod
+    def title_clean(cls, v: str) -> str:
+        return v.strip()[:100] or "untitled"
+
+
 # ── Auth endpoints ────────────────────────────────────────────────────────────
 
 @app.post("/auth/register", status_code=201)
@@ -191,8 +229,15 @@ async def me(current_user: User = Depends(get_current_user)):
         "id":         current_user.id,
         "username":   current_user.username,
         "email":      current_user.email,
+        "is_admin":   current_user.username in ADMIN_USERS,
         "created_at": current_user.created_at.isoformat(),
     }
+
+
+async def _require_admin(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.username not in ADMIN_USERS:
+        raise HTTPException(status_code=403, detail="Admin access required.")
+    return current_user
 
 
 # ── Template endpoints ────────────────────────────────────────────────────────
@@ -238,12 +283,15 @@ async def submit_job(
     script_path.write_bytes(content)
 
     await redis_async.hset(f"job:{job_id}", mapping={
-        "status":   "queued",
-        "filename": file.filename,
-        "user_id":  str(current_user.id),
+        "status":    "queued",
+        "filename":  file.filename,
+        "user_id":   str(current_user.id),
+        "username":  current_user.username,
+        "email":     current_user.email or "",
         "queued_at": datetime.utcnow().isoformat(),
     })
     await redis_async.lpush(f"job_list:{current_user.id}", job_id)
+    await redis_async.rpush("hw_queue", job_id)   # hardware scheduler queue
 
     from tasks import run_script
     task = run_script.apply_async(args=[job_id, str(script_path), current_user.id])
@@ -279,12 +327,16 @@ async def job_status(job_id: str, current_user: User = Depends(get_current_user)
 
 
 @app.get("/jobs/{job_id}/logs")
-async def stream_logs(job_id: str, current_user: User = Depends(get_current_user)):
+async def stream_logs(
+    job_id: str,
+    offset: int = 0,
+    current_user: User = Depends(get_current_user),
+):
     await _owned_job(job_id, current_user)
 
     async def generate():
         existing = await redis_async.lrange(f"logs:{job_id}", 0, -1)
-        for line in existing:
+        for line in existing[max(0, offset):]:
             if line == "__DONE__":
                 yield "data: __DONE__\n\n"
                 return
@@ -321,10 +373,8 @@ async def stop_job(job_id: str, current_user: User = Depends(get_current_user)):
     if data.get("status") not in ("running", "queued"):
         raise HTTPException(status_code=400, detail="Job has already completed.")
 
-    # Önce stop_requested flag'ini set et (sandbox loop okur)
     await redis_async.hset(f"job:{job_id}", "stop_requested", "1")
 
-    # PID varsa process grubunu direkt öldür
     pid_str = data.get("pid")
     if pid_str:
         try:
@@ -332,7 +382,310 @@ async def stop_job(job_id: str, current_user: User = Depends(get_current_user)):
         except (ProcessLookupError, OSError):
             pass
 
-    await redis_async.hset(f"job:{job_id}", "status", "failed")
+    # Clean up hardware queue
+    await redis_async.lrem("hw_queue", 0, job_id)
+    running = await redis_async.get("hw_running")
+    if running == job_id:
+        await redis_async.delete("hw_running")
+        await redis_async.publish("queue_channel", "update")
+
+    await redis_async.hset(f"job:{job_id}", mapping={
+        "status":       "failed",
+        "completed_at": datetime.utcnow().isoformat(),
+    })
+    return {"ok": True}
+
+
+@app.get("/queue")
+async def get_queue(current_user: User = Depends(get_current_user)):
+    running_id = await redis_async.get("hw_running")
+    queue_ids  = await redis_async.lrange("hw_queue", 0, -1)
+
+    # Compute ETA from rolling average duration
+    durations = await redis_async.lrange("hw_durations", 0, -1)
+    avg_s = (sum(float(d) for d in durations) / len(durations)) if durations else None
+
+    running = None
+    if running_id:
+        job_data = await redis_async.hgetall(f"job:{running_id}")
+        if job_data and job_data.get("status") == "running":
+            running = {
+                "job_id":     running_id,
+                "username":   job_data.get("username", "—"),
+                "filename":   job_data.get("filename", "—"),
+                "started_at": job_data.get("started_at"),
+                "is_mine":    job_data.get("user_id") == str(current_user.id),
+            }
+        else:
+            await redis_async.delete("hw_running")  # stale key — self-heal
+
+    queue = []
+    for i, jid in enumerate(queue_ids):
+        job_data = await redis_async.hgetall(f"job:{jid}")
+        if job_data and job_data.get("status") == "queued":
+            eta_s = round(avg_s * (i + 1)) if avg_s else None
+            queue.append({
+                "job_id":    jid,
+                "position":  i + 1,
+                "username":  job_data.get("username", "—"),
+                "filename":  job_data.get("filename", "—"),
+                "queued_at": job_data.get("queued_at"),
+                "is_mine":   job_data.get("user_id") == str(current_user.id),
+                "eta_s":     eta_s,
+            })
+
+    return {
+        "running":        running,
+        "queue":          queue,
+        "queue_length":   len(queue),
+        "avg_duration_s": round(avg_s) if avg_s else None,
+    }
+
+
+@app.get("/queue/stats")
+async def queue_stats(_: User = Depends(get_current_user)):
+    now_ts  = datetime.utcnow().timestamp()
+    since   = now_ts - 86400
+    entries = await redis_async.zrangebyscore("hw_timeline", since, "+inf", withscores=True)
+
+    hours_minutes = [0.0] * 24   # index 0 = oldest, 23 = most recent hour
+    hours_count   = [0]   * 24
+
+    for entry, score in entries:
+        try:
+            data      = json.loads(entry)
+            hours_ago = (now_ts - score) / 3600
+            bucket    = min(23, int(hours_ago))     # 0 = within last hour
+            idx       = 23 - bucket                 # flip: index 23 = most recent
+            hours_minutes[idx] += data.get("duration_s", 0) / 60
+            hours_count[idx]   += 1
+        except Exception:
+            pass
+
+    total_minutes = sum(hours_minutes)
+    return {
+        "hours_busy_minutes": hours_minutes,
+        "hours_job_count":    hours_count,
+        "total_jobs_24h":     len(entries),
+        "total_minutes_24h":  round(total_minutes, 1),
+        "utilization_pct":    round(total_minutes / (24 * 60) * 100, 1),
+    }
+
+
+@app.get("/jobs/quota")
+async def job_quota(current_user: User = Depends(get_current_user)):
+    key  = f"rl:jobs:{current_user.id}"
+    used = int(await redis_async.get(key) or 0)
+    ttl  = await redis_async.ttl(key)
+    return {
+        "used":       min(used, MAX_JOBS_PER_HOUR),
+        "limit":      MAX_JOBS_PER_HOUR,
+        "resets_in":  max(0, ttl),
+    }
+
+
+@app.get("/health")
+async def health():
+    checks: dict = {"status": "ok", "redis": False, "hw_running": None}
+    try:
+        await redis_async.ping()
+        checks["redis"] = True
+        checks["hw_running"] = await redis_async.get("hw_running")
+        queue_len = await redis_async.llen("hw_queue")
+        checks["queue_length"] = queue_len
+    except Exception as e:
+        checks["status"] = "degraded"
+        checks["error"]  = str(e)
+    return checks
+
+
+# ── Auth config ───────────────────────────────────────────────────────────────
+
+@app.get("/auth/config")
+async def auth_config():
+    return {"allow_registration": ALLOW_REGISTRATION}
+
+
+# ── User stats ────────────────────────────────────────────────────────────────
+
+@app.get("/users/me/stats")
+async def user_stats(current_user: User = Depends(get_current_user)):
+    job_ids = await redis_async.lrange(f"job_list:{current_user.id}", 0, -1)
+    done = 0; failed_c = 0; total_dur = 0.0
+    for jid in job_ids:
+        d = await redis_async.hgetall(f"job:{jid}")
+        s = d.get("status", "")
+        if s == "done":
+            done += 1
+        elif s in ("failed", "timeout"):
+            failed_c += 1
+        try:
+            total_dur += float(d.get("duration_s", 0))
+        except ValueError:
+            pass
+    return {
+        "total":            len(job_ids),
+        "done":             done,
+        "failed":           failed_c,
+        "total_duration_s": round(total_dur, 1),
+        "avg_duration_s":   round(total_dur / done, 1) if done else None,
+    }
+
+
+# ── Share ─────────────────────────────────────────────────────────────────────
+
+@app.post("/share", status_code=201)
+async def create_share(body: ShareIn, current_user: User = Depends(get_current_user)):
+    share_id = secrets.token_urlsafe(8)
+    data = json.dumps({
+        "code":       body.code,
+        "title":      body.title,
+        "username":   current_user.username,
+        "created_at": datetime.utcnow().isoformat(),
+    })
+    await redis_async.setex(f"share:{share_id}", 86400 * 30, data)
+    return {"share_id": share_id}
+
+
+@app.get("/share/{share_id}")
+async def get_share(share_id: str):
+    raw = await redis_async.get(f"share:{share_id}")
+    if not raw:
+        raise HTTPException(status_code=404, detail="Share link not found or expired.")
+    return json.loads(raw)
+
+
+# ── Admin endpoints ───────────────────────────────────────────────────────────
+
+@app.get("/admin/queue")
+async def admin_queue(_: User = Depends(_require_admin)):
+    running_id = await redis_async.get("hw_running")
+    queue_ids  = await redis_async.lrange("hw_queue", 0, -1)
+
+    running = None
+    if running_id:
+        d = await redis_async.hgetall(f"job:{running_id}")
+        if d and d.get("status") == "running":
+            running = {"job_id": running_id, **d}
+        else:
+            await redis_async.delete("hw_running")
+
+    queue = []
+    for i, jid in enumerate(queue_ids):
+        d = await redis_async.hgetall(f"job:{jid}")
+        if d and d.get("status") == "queued":
+            queue.append({"job_id": jid, "position": i + 1, **d})
+
+    return {"running": running, "queue": queue}
+
+
+@app.get("/admin/users")
+async def admin_users(_: User = Depends(_require_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).order_by(User.created_at.desc()))
+    users  = result.scalars().all()
+    return [
+        {
+            "id":         u.id,
+            "username":   u.username,
+            "email":      u.email,
+            "is_active":  u.is_active,
+            "is_admin":   u.username in ADMIN_USERS,
+            "created_at": u.created_at.isoformat(),
+        }
+        for u in users
+    ]
+
+
+@app.post("/admin/users/{user_id}/toggle")
+async def admin_toggle_user(
+    user_id: int,
+    _: User = Depends(_require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user   = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    user.is_active = not user.is_active
+    await db.commit()
+    return {"id": user.id, "username": user.username, "is_active": user.is_active}
+
+
+@app.post("/admin/jobs/{job_id}/kill")
+async def admin_kill_job(job_id: str, _: User = Depends(_require_admin)):
+    data = await redis_async.hgetall(f"job:{job_id}")
+    if not data:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    if data.get("status") not in ("running", "queued"):
+        raise HTTPException(status_code=400, detail="Job already completed.")
+
+    await redis_async.hset(f"job:{job_id}", "stop_requested", "1")
+    pid_str = data.get("pid")
+    if pid_str:
+        try:
+            os.killpg(os.getpgid(int(pid_str)), signal.SIGKILL)
+        except (ProcessLookupError, OSError):
+            pass
+
+    await redis_async.lrem("hw_queue", 0, job_id)
+    running = await redis_async.get("hw_running")
+    if running == job_id:
+        await redis_async.delete("hw_running")
+        await redis_async.publish("queue_channel", "update")
+
+    await redis_async.hset(f"job:{job_id}", mapping={
+        "status":       "failed",
+        "completed_at": datetime.utcnow().isoformat(),
+    })
+    return {"ok": True, "job_id": job_id}
+
+
+def _capture_env_info_sync() -> dict:
+    """Capture spinnaker2 conda env metadata (runs in thread executor)."""
+    python = os.getenv("SPINNAKER_PYTHON", sys.executable)
+    info: dict = {"executable": python, "captured_at": datetime.utcnow().isoformat()}
+
+    try:
+        r = _subprocess.run([python, "-c", "import sys; print(sys.version)"],
+                            capture_output=True, text=True, timeout=5)
+        info["python_version"] = r.stdout.strip()
+    except Exception as e:
+        info["python_version"] = f"error: {e}"
+
+    try:
+        r = _subprocess.run([python, "-m", "pip", "list", "--format=json"],
+                            capture_output=True, text=True, timeout=30)
+        all_pkgs = json.loads(r.stdout)
+        KEEP = {
+            "spinnaker2", "py-spinnaker2", "pyspinnaker2",
+            "numpy", "scipy", "matplotlib", "pandas",
+            "brian2", "pynn", "nir", "torch", "tensorflow", "networkx",
+        }
+        keep_norm = {k.lower().replace("-", "_") for k in KEEP}
+        info["key_packages"]   = [p for p in all_pkgs
+                                  if p["name"].lower().replace("-", "_") in keep_norm]
+        info["total_packages"] = len(all_pkgs)
+    except Exception as e:
+        info["key_packages"]    = []
+        info["packages_error"]  = str(e)
+
+    return info
+
+
+@app.get("/env/info")
+async def env_info(_: User = Depends(get_current_user)):
+    cached = await redis_async.get("hw_env_info")
+    if cached:
+        return json.loads(cached)
+    loop = asyncio.get_event_loop()
+    info = await loop.run_in_executor(None, _capture_env_info_sync)
+    await redis_async.setex("hw_env_info", 86400, json.dumps(info))
+    return info
+
+
+@app.delete("/env/info/cache")
+async def clear_env_cache(_: User = Depends(_require_admin)):
+    await redis_async.delete("hw_env_info")
     return {"ok": True}
 
 
