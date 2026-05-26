@@ -50,7 +50,7 @@ proj_lif  = snn.Projection(pre=stim, post=pop_lif,  connections=conns)
 net = snn.Network("alif_vs_lif")
 net.add(stim, pop_alif, pop_lif, proj_alif, proj_lif)
 
-hw = hardware.SpiNNaker2Chip()
+hw = hardware.SpiNNcloud48NodeBoard()
 print(f"Running {timesteps} timesteps on SpiNNaker2...")
 hw.run(net, timesteps)
 print("Done.")

@@ -68,7 +68,7 @@ for pop in pops:
             conns.append([int(pre_id), post_id, -2.14, 5])
     net.add(snn.Projection(pre=pop, post=pop, connections=conns))
 
-hw = hardware.SpiNNaker2Chip()
+hw = hardware.SpiNNcloud48NodeBoard()
 time_steps = 80
 print(f"Running {time_steps} timesteps on SpiNNaker2...")
 hw.run(net, time_steps)

@@ -40,7 +40,7 @@ proj = snn.Projection(stim, pop1, conns)
 net = snn.Network("lif_curr_exp_demo")
 net.add(stim, pop1, proj)
 
-hw = hardware.SpiNNaker2Chip()
+hw = hardware.SpiNNcloud48NodeBoard()
 timesteps = 50
 print(f"Running {timesteps} timesteps on SpiNNaker2...")
 hw.run(net, timesteps)

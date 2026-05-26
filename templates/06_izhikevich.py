@@ -39,7 +39,7 @@ proj = snn.Projection(pre=neuron1, post=neuron2, connections=connections)
 net = snn.Network("izhikevich_demo")
 net.add(neuron1, neuron2, proj)
 
-hw = hardware.SpiNNaker2Chip()
+hw = hardware.SpiNNcloud48NodeBoard()
 timesteps = 1000
 print(f"Running {timesteps} timesteps on SpiNNaker2...")
 hw.run(net, timesteps)

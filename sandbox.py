@@ -64,7 +64,7 @@ def _auto_show(*_a, **_kw):
     for _n in _plt.get_fignums():
         _fig_n[0] += 1
         _fname = f"figure_{_fig_n[0]}.png"
-        _plt.figure(_n).savefig(_fname, dpi=150, bbox_inches="tight")
+        _plt.figure(_n).savefig(_fname, dpi=100, bbox_inches="tight")
         print(f"[Plot saved: {_fname}]")
     _plt.close("all")
 _plt.show = _auto_show
@@ -117,9 +117,8 @@ def run_sandboxed(job_id: str, script_path: str, work_dir: Path, publish: Callab
         )
     except Exception as exc:
         publish(f"[Sandbox error: {exc}]")
-        return -2
-    finally:
         Path(wrapper_path).unlink(missing_ok=True)
+        return -2
 
     # PID'i Redis'e yaz — stop endpoint buradan okur
     _r.hset(f"job:{job_id}", "pid", str(process.pid))
@@ -141,6 +140,7 @@ def run_sandboxed(job_id: str, script_path: str, work_dir: Path, publish: Callab
         publish(f"[TIMEOUT: Job killed after {WALL_TIMEOUT}s]")
         return -1
     finally:
+        Path(wrapper_path).unlink(missing_ok=True)
         _r.hdel(f"job:{job_id}", "pid", "stop_requested")
 
     return process.returncode

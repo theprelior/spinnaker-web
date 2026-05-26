@@ -29,7 +29,7 @@ stim = snn.Population(
 net = snn.Network("poisson_demo")
 net.add(stim)
 
-hw = hardware.SpiNNaker2Chip()
+hw = hardware.SpiNNcloud48NodeBoard()
 timesteps = 1000
 print(f"Running {timesteps} timesteps on SpiNNaker2...")
 hw.run(net, timesteps)

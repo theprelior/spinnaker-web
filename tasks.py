@@ -95,8 +95,11 @@ def run_script(self, job_id: str, script_path: str, user_id: int) -> None:
         })
 
         user_email = redis_client.hget(f"job:{job_id}", "email") or ""
+        username   = redis_client.hget(f"job:{job_id}", "username") or "unknown"
         fname = Path(script_path).name
         icon  = "✓" if status == "done" else "✗"
+
+        # Kullanıcıya bildirim
         _send_email(
             user_email,
             f"[SpiNNaker2] {icon} {fname} — {status}",
@@ -106,6 +109,23 @@ def run_script(self, job_id: str, script_path: str, user_id: int) -> None:
             f"Duration: {duration_s:.0f}s\n\n"
             f"Log in to download your results.\n",
         )
+
+        # Hata varsa admin'e tam log ile bildir
+        if status in ("failed", "timeout"):
+            admin_email = os.getenv("ADMIN_EMAIL", "")
+            logs = redis_client.lrange(f"logs:{job_id}", 0, -1)
+            log_tail = "\n".join(logs[-50:])   # son 50 satır
+            _send_email(
+                admin_email,
+                f"[SpiNNaker2 ADMIN] ✗ Job failed — {fname} ({username})",
+                f"A job has failed on SpiNNaker2 Playground.\n\n"
+                f"Job ID:   {job_id}\n"
+                f"User:     {username} <{user_email}>\n"
+                f"File:     {fname}\n"
+                f"Status:   {status.upper()}\n"
+                f"Duration: {duration_s:.0f}s\n\n"
+                f"--- Last 50 log lines ---\n{log_tail}\n",
+            )
 
         # Record in timeline for utilization chart (7-day window)
         timeline_entry = json.dumps({"job_id": job_id, "duration_s": duration_s, "status": status})
@@ -123,6 +143,14 @@ def run_script(self, job_id: str, script_path: str, user_id: int) -> None:
         })
         _pub(job_id, f"[Internal worker error: {exc}]")
         _pub(job_id, "__DONE__")
+        admin_email = os.getenv("ADMIN_EMAIL", "")
+        _send_email(
+            admin_email,
+            f"[SpiNNaker2 ADMIN] ✗ Worker exception — {Path(script_path).name}",
+            f"Unhandled exception in Celery worker.\n\n"
+            f"Job ID: {job_id}\n"
+            f"Error:  {exc}\n",
+        )
 
     finally:
         redis_client.delete("hw_running")
