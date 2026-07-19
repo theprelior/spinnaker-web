@@ -287,6 +287,26 @@ header{
 .term-output.no-wrap{overflow-x:auto}
 .term-output.no-wrap .l{white-space:pre;word-break:normal}
 .btn-term.active{border-color:var(--blue);color:var(--blue)}
+.l.trace{color:#484f58;padding-left:16px}
+.l.timing{color:#79c0ff}
+/* Search */
+.term-search-bar{
+  display:none;align-items:center;gap:6px;padding:4px 10px;
+  background:#010409;border-bottom:1px solid var(--border2);flex-shrink:0
+}
+.term-search-bar input{
+  flex:1;background:#161b22;border:1px solid var(--border);border-radius:4px;
+  color:var(--text);padding:3px 8px;font-size:12px;outline:none;font-family:inherit
+}
+.term-search-bar input:focus{border-color:var(--blue)}
+.term-search-count{font-size:11px;color:var(--muted);min-width:60px;white-space:nowrap}
+.term-search-bar .btn-term{padding:2px 6px}
+.term-output.searching .l:not(.search-match){opacity:.25}
+.term-output.searching .l.search-match{
+  background:#e3b34112;border-left:2px solid var(--yellow);padding-left:12px
+}
+/* Line count */
+.term-line-count{font-size:10px;color:var(--muted);font-family:monospace}
 
 /* Results viewer modal */
 #results-modal{
@@ -814,10 +834,20 @@ header{
         <div class="term-resize-handle" id="term-resize-handle"></div>
         <div class="term-bar">
           <span>OUTPUT</span>
+          <span class="term-line-count" id="term-line-count"></span>
           <div class="spacer"></div>
-          <button class="btn-term" id="btn-wrap" onclick="toggleWrap()" title="Toggle word wrap">⇌ Wrap</button>
+          <button class="btn-term active" id="btn-autoscroll" onclick="toggleAutoscroll()" title="Auto-scroll to bottom">↓</button>
+          <button class="btn-term" id="btn-term-search" onclick="toggleTermSearch()" title="Search (Ctrl+F)">⌕</button>
+          <button class="btn-term" id="btn-wrap" onclick="toggleWrap()" title="Toggle word wrap">⇌</button>
           <button class="btn-term" onclick="copyTerminal()">Copy</button>
           <button class="btn-term" onclick="clearTerm()">Clear</button>
+        </div>
+        <div class="term-search-bar" id="term-search-bar">
+          <input id="term-search-input" placeholder="Search output…" oninput="termSearch(this.value)" onkeydown="termSearchKey(event)">
+          <span class="term-search-count" id="term-search-count"></span>
+          <button class="btn-term" onclick="termSearchNav(-1)" title="Previous">↑</button>
+          <button class="btn-term" onclick="termSearchNav(1)"  title="Next">↓</button>
+          <button class="btn-term" onclick="closeTermSearch()">✕</button>
         </div>
         <div class="term-output" id="term-out">
           <div class="term-empty">Press ▶ Run to execute your code.</div>
@@ -1368,6 +1398,8 @@ function fmtSecs(secs) {
 }
 
 // ── Terminal helpers ───────────────────────────────────────────────────────
+let autoScroll = true;
+
 function termLine(text, cls = '') {
   const out = document.getElementById('term-out');
   const empty = out.querySelector('.term-empty');
@@ -1375,22 +1407,114 @@ function termLine(text, cls = '') {
   const div = document.createElement('div');
   div.className = 'l' + (cls ? ' ' + cls : '');
   div.textContent = text;
+  // If search active, apply match state immediately
+  const q = document.getElementById('term-search-input')?.value;
+  if (q && out.classList.contains('searching')) {
+    div.classList.toggle('search-match', text.toLowerCase().includes(q.toLowerCase()));
+  }
   out.appendChild(div);
-  out.scrollTop = out.scrollHeight;
+  if (autoScroll) out.scrollTop = out.scrollHeight;
+  const cnt = document.getElementById('term-line-count');
+  if (cnt) { const n = out.querySelectorAll('.l').length; cnt.textContent = n ? `${n} lines` : ''; }
 }
 
 function clearTerm() {
-  document.getElementById('term-out').innerHTML = '';
+  const out = document.getElementById('term-out');
+  out.innerHTML = '';
+  out.classList.remove('searching');
+  const cnt = document.getElementById('term-line-count');
+  if (cnt) cnt.textContent = '';
+  const si = document.getElementById('term-search-input');
+  if (si) si.value = '';
+  const sc = document.getElementById('term-search-count');
+  if (sc) sc.textContent = '';
 }
 
 function classifyLine(line) {
   if (!line) return '';
-  const l = line.toLowerCase();
-  if (l.startsWith('[process exited') || l.startsWith('[timeout') || l.startsWith('[stopped')) return 'sys';
-  if (l.includes('error') || l.includes('traceback') || l.includes('exception')) return 'e';
-  if (l.includes('warn')) return 'w';
-  if (l.includes('success') || l.includes('✓') || l.includes('completed') || l.includes('done')) return 's';
+  // System messages
+  if (/^\[(process exited|timeout|stopped by|connection lost|auto-save|sandbox)/i.test(line)) return 'sys';
+  // Plot saved → success
+  if (/^\[plot saved/i.test(line)) return 's';
+  // Traceback header
+  if (/^traceback \(most recent/i.test(line)) return 'e';
+  // Error types
+  if (/^[\w.]+error:/i.test(line) || /^[\w.]*exception:/i.test(line)) return 'e';
+  if (/\b(error|exception|failed|cannot|no such file)\b/i.test(line)) return 'e';
+  // Stack trace indented lines
+  if (/^\s+File ".*", line \d+/.test(line) || /^\s+\^+$/.test(line)) return 'trace';
+  // Warnings
+  if (/\bwarn(ing)?\b|\bdeprecated\b/i.test(line)) return 'w';
+  // Timing info
+  if (/\b\d+(\.\d+)?\s*(s|ms|seconds|milliseconds)\b/i.test(line) && !/error/i.test(line)) return 'timing';
+  // Success
+  if (/✓|\bsuccess\b|\bcompleted\b/i.test(line)) return 's';
   return '';
+}
+
+function toggleAutoscroll() {
+  autoScroll = !autoScroll;
+  document.getElementById('btn-autoscroll').classList.toggle('active', autoScroll);
+}
+
+// ── Terminal search ─────────────────────────────────────────────────────────
+function toggleTermSearch() {
+  const bar = document.getElementById('term-search-bar');
+  const open = bar.style.display === 'flex';
+  if (open) { closeTermSearch(); return; }
+  bar.style.display = 'flex';
+  document.getElementById('btn-term-search').classList.add('active');
+  document.getElementById('term-search-input').focus();
+}
+
+function closeTermSearch() {
+  document.getElementById('term-search-bar').style.display = 'none';
+  document.getElementById('btn-term-search').classList.remove('active');
+  document.getElementById('term-search-input').value = '';
+  document.getElementById('term-search-count').textContent = '';
+  const out = document.getElementById('term-out');
+  out.classList.remove('searching');
+  out.querySelectorAll('.l').forEach(l => l.classList.remove('search-match'));
+}
+
+let _searchMatches = [], _searchIdx = 0;
+
+function termSearch(query) {
+  const out = document.getElementById('term-out');
+  const lines = [...out.querySelectorAll('.l')];
+  _searchMatches = [];
+  lines.forEach(l => l.classList.remove('search-match'));
+
+  if (!query) {
+    out.classList.remove('searching');
+    document.getElementById('term-search-count').textContent = '';
+    return;
+  }
+  out.classList.add('searching');
+  const lo = query.toLowerCase();
+  lines.forEach(l => {
+    if (l.textContent.toLowerCase().includes(lo)) {
+      l.classList.add('search-match');
+      _searchMatches.push(l);
+    }
+  });
+  _searchIdx = 0;
+  document.getElementById('term-search-count').textContent =
+    _searchMatches.length ? `${_searchMatches.length} match${_searchMatches.length > 1 ? 'es' : ''}` : 'No matches';
+  if (_searchMatches.length) _searchMatches[0].scrollIntoView({block:'nearest'});
+}
+
+function termSearchNav(dir) {
+  if (!_searchMatches.length) return;
+  _searchIdx = (_searchIdx + dir + _searchMatches.length) % _searchMatches.length;
+  _searchMatches[_searchIdx].scrollIntoView({block:'nearest'});
+  document.getElementById('term-search-count').textContent =
+    `${_searchIdx + 1} / ${_searchMatches.length}`;
+}
+
+function termSearchKey(e) {
+  if (e.key === 'Enter')  { termSearchNav(e.shiftKey ? -1 : 1); e.preventDefault(); }
+  if (e.key === 'Escape') closeTermSearch();
 }
 
 function setJobStatus(state, label) {
@@ -1839,7 +1963,8 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
   if ((e.ctrlKey || e.metaKey) && e.key === 's')     { e.preventDefault(); openSaveModal(); }
   if ((e.ctrlKey || e.metaKey) && e.key === 'b')     { e.preventDefault(); toggleSidebar(); }
-  if (e.key === 'Escape') { closeSaveModal(); closeResultsModal(); closeQueueModal(); closeAdminPanel(); closeHelpModal(); closeCompareModal(); closeShareDialog(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f' && document.getElementById('app').style.display !== 'none') { e.preventDefault(); toggleTermSearch(); }
+  if (e.key === 'Escape') { closeSaveModal(); closeResultsModal(); closeQueueModal(); closeAdminPanel(); closeHelpModal(); closeCompareModal(); closeShareDialog(); closeTermSearch(); }
 });
 
 // ── Auto-save ──────────────────────────────────────────────────────────────
