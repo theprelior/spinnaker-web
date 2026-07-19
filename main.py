@@ -39,7 +39,43 @@ MAX_JOBS_PER_HOUR  = int(os.getenv("MAX_JOBS_PER_HOUR", "10"))
 MAX_UPLOAD_BYTES   = 1 * 1024 * 1024   # 1 MB
 ADMIN_USERS        = {u.strip() for u in os.getenv("ADMIN_USERS", "").split(",") if u.strip()}
 
+# Management board IP (STM at 192.168.1.2) for keepalive + status checks
+_MGMT_IP            = os.getenv("BOARD_MANAGEMENT_IP", "192.168.1.2")
+_MGMT_PORT          = int(os.getenv("BOARD_MANAGEMENT_PORT", "22"))  # SSH or any known port
+_KEEPALIVE_INTERVAL = int(os.getenv("BOARD_KEEPALIVE_INTERVAL", "120"))  # seconds
+
 redis_async: aioredis.Redis = None
+
+
+async def _tcp_reachable(ip: str, port: int, timeout: float = 2.0) -> bool:
+    """Return True if host:port accepts a TCP connection (or sends RST = host alive)."""
+    try:
+        _, writer = await asyncio.wait_for(
+            asyncio.open_connection(ip, port), timeout=timeout
+        )
+        writer.close()
+        await writer.wait_closed()
+        return True
+    except asyncio.TimeoutError:
+        return False
+    except OSError as e:
+        # ECONNREFUSED (111) means host is UP but port is closed — still alive
+        import errno
+        return e.errno == errno.ECONNREFUSED
+
+
+async def _board_keepalive_loop() -> None:
+    """Touch management board every BOARD_KEEPALIVE_INTERVAL seconds when idle."""
+    if not _MGMT_IP:
+        return
+    while True:
+        await asyncio.sleep(_KEEPALIVE_INTERVAL)
+        try:
+            if await redis_async.exists("hw_running"):
+                continue
+            await _tcp_reachable(_MGMT_IP, _MGMT_PORT)
+        except Exception:
+            pass
 
 
 @asynccontextmanager
@@ -61,7 +97,9 @@ async def lifespan(app: FastAPI):
             await redis_async.delete("hw_running")
             await redis_async.publish("queue_channel", "update")
 
+    keepalive_task = asyncio.create_task(_board_keepalive_loop())
     yield
+    keepalive_task.cancel()
     await redis_async.aclose()
 
 
@@ -375,10 +413,15 @@ async def stop_job(job_id: str, current_user: User = Depends(get_current_user)):
 
     await redis_async.hset(f"job:{job_id}", "stop_requested", "1")
 
-    pid_str = data.get("pid")
-    if pid_str:
+    slurm_job_id = data.get("slurm_job_id")
+    if slurm_job_id:
         try:
-            os.killpg(os.getpgid(int(pid_str)), signal.SIGKILL)
+            _subprocess.run(["scancel", slurm_job_id], capture_output=True)
+        except Exception:
+            pass
+    elif data.get("pid"):
+        try:
+            os.killpg(os.getpgid(int(data["pid"])), signal.SIGKILL)
         except (ProcessLookupError, OSError):
             pass
 
@@ -497,6 +540,12 @@ async def health():
         checks["status"] = "degraded"
         checks["error"]  = str(e)
     return checks
+
+
+@app.get("/hardware/ping")
+async def hardware_ping(_: User = Depends(get_current_user)):
+    online = await _tcp_reachable(_MGMT_IP, _MGMT_PORT)
+    return {"online": online, "ip": _MGMT_IP}
 
 
 # ── Auth config ───────────────────────────────────────────────────────────────
@@ -620,10 +669,16 @@ async def admin_kill_job(job_id: str, _: User = Depends(_require_admin)):
         raise HTTPException(status_code=400, detail="Job already completed.")
 
     await redis_async.hset(f"job:{job_id}", "stop_requested", "1")
-    pid_str = data.get("pid")
-    if pid_str:
+
+    slurm_job_id = data.get("slurm_job_id")
+    if slurm_job_id:
         try:
-            os.killpg(os.getpgid(int(pid_str)), signal.SIGKILL)
+            _subprocess.run(["scancel", slurm_job_id], capture_output=True)
+        except Exception:
+            pass
+    elif data.get("pid"):
+        try:
+            os.killpg(os.getpgid(int(data["pid"])), signal.SIGKILL)
         except (ProcessLookupError, OSError):
             pass
 

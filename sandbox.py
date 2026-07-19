@@ -25,7 +25,7 @@ CPU_SECONDS  = int(os.getenv("JOB_TIMEOUT_SECONDS", "300"))
 MEMORY_MB    = int(os.getenv("JOB_MEMORY_MB", "512"))
 FILE_SIZE_MB = 100
 MAX_PROCS    = 128
-MAX_FDS      = 128
+MAX_FDS      = 1024
 WALL_TIMEOUT = CPU_SECONDS + 30
 
 # Conda ortamının Python'u — .env'de SPINNAKER_PYTHON ile ayarlanır
@@ -34,6 +34,8 @@ _PYTHON = os.getenv("SPINNAKER_PYTHON", sys.executable)
 _conda_env = os.path.dirname(os.path.dirname(_PYTHON))   # .../envs/spinnaker2
 _conda_bin = os.path.join(_conda_env, "bin")
 
+_spinnaker_dir = os.getenv("SPINNAKER_DIR", "/mnt/spinnaker")
+
 SAFE_ENV: dict[str, str] = {
     "PATH":                    f"{_conda_bin}:/usr/local/bin:/usr/bin:/bin",
     "PYTHONDONTWRITEBYTECODE": "1",
@@ -41,6 +43,8 @@ SAFE_ENV: dict[str, str] = {
     "LANG":                    "en_US.UTF-8",
     "HOME":                    "/tmp",
     "CONDA_PREFIX":            _conda_env,
+    # SpiNNaker2 config dizini
+    "SPINNAKER_DIR":           _spinnaker_dir,
     # Headless matplotlib (ekran yok)
     "MPLBACKEND":              "Agg",
     # OpenBLAS/numpy thread sayısını sınırla (paylaşımlı donanım)

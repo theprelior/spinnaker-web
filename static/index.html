@@ -123,33 +123,75 @@ header{
 .toolbar{
   height:var(--toolbar-h);flex-shrink:0;
   background:var(--surface);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:8px;padding:0 12px
+  display:flex;align-items:center;gap:6px;padding:0 12px
 }
 .filename-input{
-  background:#0d1117;border:1px solid var(--border);border-radius:5px;
+  background:var(--bg);border:1px solid var(--border);border-radius:5px;
   color:var(--text);padding:4px 8px;font-size:12px;width:160px;outline:none
 }
 .filename-input:focus{border-color:var(--blue)}
-.tb-sep{width:1px;height:20px;background:var(--border);margin:0 4px}
+.tb-sep{width:1px;height:20px;background:var(--border);margin:0 2px}
 .btn-tb{
-  border:none;border-radius:5px;padding:5px 12px;font-size:12px;
+  border:none;border-radius:5px;padding:5px 11px;font-size:12px;
   font-weight:500;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px
 }
-.btn-run{background:#238636;color:#fff}
-.btn-run:hover:not(:disabled){background:#2ea043}
+/* Button groups — connected border radius */
+.btn-group{display:flex;align-items:center}
+.btn-group .btn-tb{border-radius:0}
+.btn-group .btn-tb:first-child{border-radius:5px 0 0 5px}
+.btn-group .btn-tb:last-child{border-radius:0 5px 5px 0}
+.btn-group .btn-tb:only-child{border-radius:5px}
+.btn-group .btn-tb+.btn-tb{border-left:none}
+/* Run — primary CTA */
+.btn-run{
+  background:linear-gradient(180deg,#2ea043,#238636);
+  color:#fff;padding:5px 18px;font-size:13px;font-weight:600;
+  box-shadow:0 1px 3px #0006
+}
+.btn-run:hover:not(:disabled){background:linear-gradient(180deg,#3fb950,#2ea043)}
+.btn-run:disabled{background:#238636;opacity:.4}
 .btn-stop{background:#21262d;color:var(--red);border:1px solid var(--border)}
-.btn-stop:hover:not(:disabled){background:#2d0f0f}
-.btn-save{background:#21262d;color:var(--muted);border:1px solid var(--border)}
+.btn-stop:hover:not(:disabled){background:#2d0f0f;border-color:var(--red)}
+.btn-save{background:var(--border2);color:var(--muted);border:1px solid var(--border)}
 .btn-save:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
-.btn-dl{background:#21262d;color:var(--green);border:1px solid var(--border)}
+.btn-dl{background:var(--border2);color:var(--green);border:1px solid var(--border)}
 .btn-dl:hover:not(:disabled){border-color:var(--green)}
 .btn-tb:disabled{opacity:.4;cursor:not-allowed}
-.tb-status{margin-left:auto;font-size:11px;color:var(--muted)}
-.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:var(--muted)}
+/* Font size control */
+.font-ctrl{
+  display:flex;align-items:center;
+  background:var(--border2);border:1px solid var(--border);border-radius:5px;overflow:hidden
+}
+.font-ctrl button{
+  background:none;border:none;color:var(--muted);padding:4px 7px;
+  cursor:pointer;font-size:13px;line-height:1;transition:.15s
+}
+.font-ctrl button:hover{color:var(--text);background:var(--border)}
+.font-ctrl span{
+  font-size:11px;color:var(--text);min-width:20px;text-align:center;
+  padding:0 2px;user-select:none
+}
+/* Status pill */
+.tb-status{
+  margin-left:auto;display:flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:500;color:var(--text);
+  background:var(--border2);border:1px solid var(--border);
+  border-radius:20px;padding:3px 12px;white-space:nowrap
+}
+.tb-elapsed{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11px}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--muted)}
 .status-dot.running{background:var(--blue);animation:pulse 1.2s infinite}
 .status-dot.done{background:var(--green)}
 .status-dot.failed,.status-dot.timeout{background:var(--red)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+/* Light mode */
+:root[data-theme="light"]{
+  --bg:#f6f8fa;--surface:#fff;--border:#d0d7de;--border2:#eaeef2;
+  --text:#1f2328;--muted:#656d76;--blue:#0969da;--green:#1a7f37;
+  --red:#cf222e;--yellow:#9a6700;--purple:#8250df
+}
+:root[data-theme="light"] .term-output{background:#1b1f23}
+:root[data-theme="light"] .auth-form input,:root[data-theme="light"] .filename-input{background:#fff}
 
 /* Monaco wrapper */
 .editor-wrap{flex:1;min-height:0;position:relative}
@@ -194,6 +236,9 @@ header{
 .l.s{color:var(--green)}
 .l.sys{color:#6e7681;font-style:italic}
 .term-empty{color:var(--muted);font-size:12px;padding:12px 14px;font-style:italic}
+.term-output.no-wrap{overflow-x:auto}
+.term-output.no-wrap .l{white-space:pre;word-break:normal}
+.btn-term.active{border-color:var(--blue);color:var(--blue)}
 
 /* Results viewer modal */
 #results-modal{
@@ -326,10 +371,11 @@ header{
 }
 .hw-status:hover{background:var(--border);color:var(--text)}
 .hw-dot-hw{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:.3s}
-.hw-dot-hw.ready {background:var(--green)}
-.hw-dot-hw.mine  {background:var(--blue);animation:pulse 1.2s infinite}
-.hw-dot-hw.queued{background:var(--yellow);animation:pulse 1.2s infinite}
-.hw-dot-hw.busy  {background:var(--red)}
+.hw-dot-hw.ready  {background:var(--green)}
+.hw-dot-hw.mine   {background:var(--blue);animation:pulse 1.2s infinite}
+.hw-dot-hw.queued {background:var(--yellow);animation:pulse 1.2s infinite}
+.hw-dot-hw.busy   {background:var(--red)}
+.hw-dot-hw.offline{background:var(--muted)}
 
 /* ── Queue modal ── */
 #queue-modal{
@@ -612,6 +658,7 @@ header{
     <div class="h-user">Hello, <span id="h-username">—</span></div>
     <button class="h-btn" id="btn-admin" onclick="openAdminPanel()" style="display:none;color:var(--yellow);border-color:var(--yellow)">⚙ Admin</button>
     <button class="h-btn" onclick="openHelpModal()" title="Help">? Help</button>
+    <button class="h-btn" id="btn-theme" onclick="toggleTheme()" title="Toggle light/dark mode" style="font-size:14px;padding:4px 8px">☾</button>
     <button class="h-btn" onclick="logout()">Sign Out</button>
   </header>
 
@@ -640,19 +687,32 @@ header{
     <div class="editor-panel">
       <div class="toolbar">
         <input type="file" id="file-input" accept=".py" style="display:none" onchange="handleFileInput(event)">
-        <button class="btn-tb btn-save" onclick="document.getElementById('file-input').click()" title="Open local .py file">📂 Open</button>
+        <div class="btn-group">
+          <button class="btn-tb btn-save" onclick="document.getElementById('file-input').click()" title="Open local .py file">📂 Open</button>
+        </div>
         <input class="filename-input" id="filename" value="untitled.py" spellcheck="false">
         <div class="tb-sep"></div>
-        <button class="btn-tb btn-run" id="btn-run" onclick="runCode()">▶ Run</button>
-        <button class="btn-tb btn-stop" id="btn-stop" onclick="stopJob()" disabled>■ Stop</button>
-        <button class="btn-tb btn-save" onclick="openSaveModal()">💾 Save</button>
-        <button class="btn-tb btn-dl"  id="btn-dl" onclick="downloadResult()" disabled>↓ Download</button>
-        <button class="btn-tb btn-view" id="btn-view" onclick="openResultsModal()" disabled style="background:#21262d;color:var(--purple);border:1px solid var(--border)">⊞ View</button>
+        <div class="btn-group">
+          <button class="btn-tb btn-run" id="btn-run" onclick="runCode()">▶ Run</button>
+          <button class="btn-tb btn-stop" id="btn-stop" onclick="stopJob()" disabled title="Stop job">■</button>
+        </div>
+        <div class="btn-group">
+          <button class="btn-tb btn-save" onclick="openSaveModal()" title="Save code">💾</button>
+          <button class="btn-tb btn-dl" id="btn-dl" onclick="downloadResult()" disabled title="Download results">↓</button>
+          <button class="btn-tb btn-save" id="btn-view" onclick="openResultsModal()" disabled title="View results" style="color:var(--purple)">⊞</button>
+        </div>
         <div class="tb-sep"></div>
         <button class="btn-tb btn-save" onclick="shareCode()" title="Share code via link">⇪ Share</button>
-        <button class="btn-tb btn-save" onclick="changeFontSize(-1)" title="Decrease font size">A−</button>
-        <button class="btn-tb btn-save" onclick="changeFontSize(1)"  title="Increase font size">A+</button>
-        <div class="tb-status"><span class="status-dot" id="tb-dot"></span><span id="tb-label">Ready</span><span id="tb-elapsed" style="margin-left:6px;font-variant-numeric:tabular-nums"></span></div>
+        <div class="font-ctrl" title="Editor font size">
+          <button onclick="changeFontSize(-1)">−</button>
+          <span id="font-size-lbl">14</span>
+          <button onclick="changeFontSize(1)">+</button>
+        </div>
+        <div class="tb-status">
+          <span class="status-dot" id="tb-dot"></span>
+          <span id="tb-label">Ready</span>
+          <span class="tb-elapsed" id="tb-elapsed"></span>
+        </div>
       </div>
 
       <div class="editor-wrap" id="editor-wrap">
@@ -663,8 +723,9 @@ header{
       <div class="terminal" id="terminal">
         <div class="term-resize-handle" id="term-resize-handle"></div>
         <div class="term-bar">
-          <span>Terminal</span>
+          <span>OUTPUT</span>
           <div class="spacer"></div>
+          <button class="btn-term" id="btn-wrap" onclick="toggleWrap()" title="Toggle word wrap">⇌ Wrap</button>
           <button class="btn-term" onclick="copyTerminal()">Copy</button>
           <button class="btn-term" onclick="clearTerm()">Clear</button>
         </div>
@@ -1045,7 +1106,9 @@ document.getElementById('results-modal').addEventListener('click', e => {
 
 // ── Hardware queue ─────────────────────────────────────────────────────────
 let queueTimer = null;
+let hwPingTimer = null;
 let lastQueueData = null;
+let hardwareOnline = true;
 
 async function pollQueue() {
   const res = await api('GET', '/queue');
@@ -1054,12 +1117,30 @@ async function pollQueue() {
   updateHwStatus(lastQueueData);
 }
 
+async function pollHardwarePing() {
+  try {
+    const res = await api('GET', '/hardware/ping');
+    if (res && res.ok) {
+      const data = await res.json();
+      hardwareOnline = data.online;
+    }
+  } catch { hardwareOnline = false; }
+  updateHwStatus(lastQueueData);
+}
+
 function updateHwStatus(data) {
-  const { running, queue } = data;
   const dot = document.getElementById('hw-dot');
   const lbl = document.getElementById('hw-label');
   if (!dot) return;
 
+  if (!hardwareOnline) {
+    dot.className   = 'hw-dot-hw offline';
+    lbl.textContent = 'Hardware: Offline';
+    return;
+  }
+
+  if (!data) return;
+  const { running, queue } = data;
   const myRunning = running?.is_mine;
   const myQueued  = queue.find(j => j.is_mine);
 
@@ -1083,11 +1164,14 @@ function updateHwStatus(data) {
 
 function startQueuePolling() {
   pollQueue();
-  queueTimer = setInterval(pollQueue, 4000);
+  pollHardwarePing();
+  queueTimer  = setInterval(pollQueue, 4000);
+  hwPingTimer = setInterval(pollHardwarePing, 30000);
 }
 
 function stopQueuePolling() {
-  if (queueTimer) { clearInterval(queueTimer); queueTimer = null; }
+  if (queueTimer)  { clearInterval(queueTimer);  queueTimer  = null; }
+  if (hwPingTimer) { clearInterval(hwPingTimer); hwPingTimer = null; }
 }
 
 async function openQueueModal() {
@@ -1388,6 +1472,36 @@ let editorFontSize = 14;
 function changeFontSize(delta) {
   editorFontSize = Math.min(28, Math.max(8, editorFontSize + delta));
   editor?.updateOptions({ fontSize: editorFontSize });
+  const lbl = document.getElementById('font-size-lbl');
+  if (lbl) lbl.textContent = editorFontSize;
+}
+
+// ── Theme toggle ────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const root = document.documentElement;
+  const isLight = root.getAttribute('data-theme') === 'light';
+  root.setAttribute('data-theme', isLight ? '' : 'light');
+  document.getElementById('btn-theme').textContent = isLight ? '☾' : '☀';
+  localStorage.setItem('s2-theme', isLight ? 'dark' : 'light');
+}
+(function restoreTheme() {
+  if (localStorage.getItem('s2-theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('btn-theme');
+      if (btn) btn.textContent = '☀';
+    });
+  }
+})();
+
+// ── Terminal wrap toggle ────────────────────────────────────────────────────
+let termWrap = true;
+function toggleWrap() {
+  termWrap = !termWrap;
+  const out = document.getElementById('term-out');
+  const btn = document.getElementById('btn-wrap');
+  out.classList.toggle('no-wrap', !termWrap);
+  btn.classList.toggle('active', !termWrap);
 }
 
 // ── Job history ────────────────────────────────────────────────────────────
