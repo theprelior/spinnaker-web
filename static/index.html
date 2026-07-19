@@ -358,12 +358,34 @@ header{
 @keyframes toast-out{from{opacity:1}to{opacity:0;transform:translateX(16px)}}
 
 /* ── Job history ── */
-.job-hist-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.job-hist-dot.done   {background:var(--green)}
-.job-hist-dot.failed,.job-hist-dot.timeout{background:var(--red)}
-.job-hist-dot.running{background:var(--blue);animation:pulse 1.2s infinite}
-.job-hist-dot.queued {background:var(--yellow)}
-#job-hist-list{overflow-y:auto;max-height:150px}
+#job-hist-list{overflow-y:auto;flex:1;min-height:80px}
+#template-list{overflow-y:auto;max-height:180px}
+#saved-list{overflow-y:auto;max-height:120px}
+.hist-group{padding:4px 10px 2px;font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  display:flex;align-items:center;gap:6px;margin-top:4px}
+.hist-group::after{content:'';flex:1;height:1px;background:var(--border2)}
+.hist-item{display:flex;flex-direction:column;gap:2px;padding:7px 12px;
+  cursor:pointer;transition:.1s;border-left:2px solid transparent}
+.hist-item:hover{background:#1c2128;border-left-color:var(--border)}
+.hist-item-top{display:flex;align-items:center;gap:6px}
+.hist-item-name{flex:1;font-size:12px;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-item-time{font-size:10px;color:var(--muted);flex-shrink:0}
+.hist-item-bot{display:flex;align-items:center;gap:5px}
+.job-pill{font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;
+  text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+.job-pill.done   {background:#1a3a24;color:var(--green)}
+.job-pill.failed,.job-pill.timeout{background:#3d1212;color:var(--red)}
+.job-pill.running{background:#0d2045;color:var(--blue)}
+.job-pill.queued {background:#332900;color:var(--yellow)}
+.hist-dur{font-size:10px;color:var(--muted)}
+.hist-actions{margin-left:auto;display:flex;gap:2px;opacity:0;transition:.1s}
+.hist-item:hover .hist-actions{opacity:1}
+.hist-btn{background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:11px;padding:1px 4px;border-radius:3px;transition:.1s}
+.hist-btn:hover{color:var(--text);background:var(--border)}
+.hist-btn.active{color:var(--blue)}
 
 /* ── Results tabs ── */
 .results-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;padding:0 4px}
@@ -734,14 +756,14 @@ header{
     <!-- Sidebar -->
     <div class="sidebar">
       <div class="sidebar-section">Templates</div>
-      <div id="template-list" class="sidebar-list"></div>
+      <div id="template-list"></div>
 
       <hr class="sidebar-divider">
-      <div class="sidebar-section">Saved Codes</div>
-      <div id="saved-list" class="sidebar-list"></div>
+      <div class="sidebar-section">Saved Codes <span id="saved-count" style="font-weight:400;opacity:.6"></span></div>
+      <div id="saved-list"></div>
 
       <hr class="sidebar-divider">
-      <div class="sidebar-section">Recent Jobs</div>
+      <div class="sidebar-section">Recent Jobs <span id="hist-count" style="font-weight:400;opacity:.6"></span></div>
       <div id="job-hist-list"><div class="sidebar-empty">No jobs yet</div></div>
 
       <div class="user-stats" id="user-stats" title="Your all-time run statistics"></div>
@@ -971,6 +993,8 @@ async function loadSavedCodes() {
 
 function renderSavedList(list) {
   const el = document.getElementById('saved-list');
+  const countEl = document.getElementById('saved-count');
+  if (countEl) countEl.textContent = list.length ? `(${list.length})` : '';
   el.innerHTML = list.length ? '' : '<div class="sidebar-empty">No saved codes yet</div>';
   list.forEach(c => {
     const div = document.createElement('div');
@@ -1580,24 +1604,76 @@ async function loadJobHistory() {
   renderJobHistory(jobs);
 }
 
+function timeAgo(isoStr) {
+  if (!isoStr) return '';
+  const diff = (Date.now() - new Date(isoStr + 'Z').getTime()) / 1000;
+  if (diff < 60)    return 'just now';
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800)return `${Math.floor(diff / 86400)}d ago`;
+  return new Date(isoStr).toLocaleDateString();
+}
+
+function jobDateGroup(isoStr) {
+  if (!isoStr) return 'Older';
+  const diff = (Date.now() - new Date(isoStr + 'Z').getTime()) / 86400000;
+  if (diff < 1)  return 'Today';
+  if (diff < 2)  return 'Yesterday';
+  if (diff < 7)  return 'This Week';
+  return 'Older';
+}
+
 function renderJobHistory(jobs) {
   lastJobHistory = jobs;
   const el = document.getElementById('job-hist-list');
-  if (!jobs.length) { el.innerHTML = '<div class="sidebar-empty">No jobs yet</div>'; return; }
+  const countEl = document.getElementById('hist-count');
+  if (!jobs.length) {
+    el.innerHTML = '<div class="sidebar-empty">No jobs yet</div>';
+    if (countEl) countEl.textContent = '';
+    return;
+  }
+  if (countEl) countEl.textContent = `(${jobs.length})`;
   el.innerHTML = '';
-  jobs.slice(0, 20).forEach(j => {
-    const dur = j.duration_s ? ` · ${fmtSecs(Math.round(parseFloat(j.duration_s)))}` : '';
-    const isSelected = compareBase?.job_id === j.job_id;
-    const div = document.createElement('div');
-    div.className = 'sidebar-item';
-    div.dataset.jobId = j.job_id;
-    div.innerHTML = `
-      <span class="job-hist-dot ${j.status}"></span>
-      <span class="si-text" title="${esc(j.filename)}">${esc(j.filename)}</span>
-      <span style="color:var(--muted);font-size:10px;flex-shrink:0">${dur}</span>
-      ${j.status === 'done' ? `<button class="btn-compare${isSelected ? ' selected' : ''}" title="Compare" onclick="event.stopPropagation();pickForCompare('${j.job_id}','${esc(j.filename)}')">⊕</button>` : ''}`;
-    div.onclick = () => openResultsModal(j.job_id);
-    el.appendChild(div);
+
+  const groupOrder = ['Today', 'Yesterday', 'This Week', 'Older'];
+  const groups = {};
+  jobs.slice(0, 30).forEach(j => {
+    const g = jobDateGroup(j.completed_at || j.started_at);
+    (groups[g] = groups[g] || []).push(j);
+  });
+
+  groupOrder.filter(g => groups[g]).forEach(groupName => {
+    const hdr = document.createElement('div');
+    hdr.className = 'hist-group';
+    hdr.textContent = `${groupName} · ${groups[groupName].length}`;
+    el.appendChild(hdr);
+
+    groups[groupName].forEach(j => {
+      const dur      = j.duration_s ? fmtSecs(Math.round(parseFloat(j.duration_s))) : '';
+      const ago      = timeAgo(j.completed_at || j.started_at);
+      const isDone   = j.status === 'done';
+      const isSelected = compareBase?.job_id === j.job_id;
+      const pillLabel = {done:'✓ done', failed:'✗ failed', timeout:'⏱ timeout', running:'● running', queued:'· queued'}[j.status] || j.status;
+
+      const div = document.createElement('div');
+      div.className = 'hist-item';
+      div.dataset.jobId = j.job_id;
+      div.innerHTML = `
+        <div class="hist-item-top">
+          <span class="hist-item-name" title="${esc(j.filename)}">${esc(j.filename)}</span>
+          <span class="hist-item-time">${ago}</span>
+        </div>
+        <div class="hist-item-bot">
+          <span class="job-pill ${j.status}">${pillLabel}</span>
+          ${dur ? `<span class="hist-dur">${dur}</span>` : ''}
+          <div class="hist-actions">
+            ${isDone ? `<button class="hist-btn${isSelected ? ' active' : ''}" title="Compare" onclick="event.stopPropagation();pickForCompare('${j.job_id}','${esc(j.filename)}')">⊕</button>` : ''}
+            <button class="hist-btn" title="View results" onclick="event.stopPropagation();openResultsModal('${j.job_id}')">⊞</button>
+          </div>
+        </div>`;
+      div.onclick = () => openResultsModal(j.job_id);
+      el.appendChild(div);
+    });
   });
 }
 
