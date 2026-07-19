@@ -16,39 +16,87 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Segoe 
 
 /* ── Auth overlay ── */
 #auth-overlay{
-  position:fixed;inset:0;background:#000a;display:flex;
-  align-items:center;justify-content:center;z-index:1000
+  position:fixed;inset:0;display:flex;
+  align-items:center;justify-content:center;z-index:1000;
+  background:#0d1117;overflow:hidden
+}
+#auth-overlay::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 40%, #58a6ff18 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 70%, #3fb95014 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 50% 10%, #bc8cff0d 0%, transparent 55%);
+  animation:auth-glow 8s ease-in-out infinite alternate;
+  pointer-events:none
+}
+@keyframes auth-glow{
+  0%{opacity:.6;transform:scale(1)}
+  100%{opacity:1;transform:scale(1.05)}
+}
+/* Grid overlay */
+#auth-overlay::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:48px 48px;opacity:.18
 }
 .auth-box{
-  background:var(--surface);border:1px solid var(--border);border-radius:14px;
-  padding:32px 36px;width:360px;max-width:92vw
+  position:relative;z-index:1;
+  background:rgba(22,27,34,.85);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:18px;
+  padding:36px 40px 28px;
+  width:400px;max-width:94vw;
+  backdrop-filter:blur(20px);
+  box-shadow:0 0 0 1px #ffffff08,0 24px 64px #00000080,0 0 40px #58a6ff10;
+  animation:auth-in .35s ease both
 }
-.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px}
-.auth-logo .icon{width:36px;height:36px;background:linear-gradient(135deg,#58a6ff,#3fb950);
-  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.auth-logo h2{font-size:16px;font-weight:700}
-.auth-logo p{font-size:11px;color:var(--muted)}
-.auth-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)}
+@keyframes auth-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+/* Logo */
+.auth-logo{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:28px;text-align:center}
+.auth-logo .icon{
+  width:56px;height:56px;
+  background:linear-gradient(135deg,#58a6ff,#3fb950);
+  border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:26px;box-shadow:0 8px 24px #58a6ff40;margin-bottom:4px
+}
+.auth-logo h2{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.auth-logo p{font-size:12px;color:var(--muted)}
+/* Tabs — pill style */
+.auth-tabs{
+  display:flex;gap:4px;margin-bottom:22px;
+  background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px
+}
 .auth-tab{
-  flex:1;padding:8px;text-align:center;cursor:pointer;font-size:13px;font-weight:500;
-  color:var(--muted);border-bottom:2px solid transparent;transition:.15s
+  flex:1;padding:7px;text-align:center;cursor:pointer;font-size:13px;font-weight:500;
+  color:var(--muted);border-radius:6px;transition:.15s
 }
-.auth-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-.auth-form{display:none;flex-direction:column;gap:12px}
+.auth-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px #0004}
+/* Form */
+.auth-form{display:none;flex-direction:column;gap:14px}
 .auth-form.active{display:flex}
-.auth-form label{font-size:12px;color:var(--muted);margin-bottom:2px}
-.auth-form input{
-  background:#0d1117;border:1px solid var(--border);border-radius:6px;
-  color:var(--text);padding:8px 12px;font-size:13px;width:100%;outline:none;transition:.15s
+.auth-field{position:relative}
+.auth-field label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;letter-spacing:.04em;text-transform:uppercase}
+.auth-field input{
+  background:#0d1117;border:1px solid var(--border);border-radius:8px;
+  color:var(--text);padding:10px 14px;font-size:13px;width:100%;outline:none;transition:.2s
 }
-.auth-form input:focus{border-color:var(--blue)}
-.auth-err{font-size:12px;color:var(--red);min-height:16px}
+.auth-field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #58a6ff20}
+.auth-err{font-size:12px;color:var(--red);min-height:18px;display:flex;align-items:center;gap:4px}
 .btn-auth{
-  background:var(--blue);color:#fff;border:none;border-radius:6px;
-  padding:10px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;margin-top:4px
+  background:linear-gradient(180deg,#388bfd,#1f6feb);
+  color:#fff;border:none;border-radius:8px;
+  padding:11px;font-size:14px;font-weight:600;cursor:pointer;
+  transition:.15s;margin-top:2px;
+  box-shadow:0 2px 8px #1f6feb50;letter-spacing:.01em
 }
-.btn-auth:hover{filter:brightness(1.1)}
+.btn-auth:hover{filter:brightness(1.12);box-shadow:0 4px 16px #1f6feb60}
 .btn-auth:disabled{opacity:.5;cursor:not-allowed}
+/* Footer */
+.auth-footer{margin-top:20px;padding-top:16px;border-top:1px solid var(--border2);text-align:center;font-size:11px;color:var(--muted)}
+.auth-footer a{color:var(--blue);text-decoration:none}
+.auth-footer a:hover{text-decoration:underline}
 
 /* ── Layout ── */
 #app{height:100%;display:flex;flex-direction:column}
@@ -481,7 +529,8 @@ header{
   <div class="auth-box">
     <div class="auth-logo">
       <div class="icon">⚡</div>
-      <div><h2>SpiNNaker2 Playground</h2><p>Neuromorphic Computing Platform</p></div>
+      <h2>SpiNNaker2 Playground</h2>
+      <p>Neuromorphic Computing Platform</p>
     </div>
     <div class="auth-tabs">
       <div class="auth-tab active" onclick="switchTab('login')">Sign In</div>
@@ -489,19 +538,38 @@ header{
     </div>
 
     <form class="auth-form active" id="form-login" onsubmit="doLogin(event)">
-      <div><label>Username</label><input id="l-user" autocomplete="username" required></div>
-      <div><label>Password</label><input id="l-pass" type="password" autocomplete="current-password" required></div>
+      <div class="auth-field">
+        <label>Username</label>
+        <input id="l-user" autocomplete="username" placeholder="Enter your username" required>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input id="l-pass" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+      </div>
       <div class="auth-err" id="l-err"></div>
-      <button class="btn-auth" type="submit" id="l-btn">Sign In</button>
+      <button class="btn-auth" type="submit" id="l-btn">Sign In →</button>
     </form>
 
     <form class="auth-form" id="form-register" onsubmit="doRegister(event)">
-      <div><label>Username</label><input id="r-user" autocomplete="username" required></div>
-      <div><label>Email</label><input id="r-email" type="email" autocomplete="email" required></div>
-      <div><label>Password (min. 8 characters)</label><input id="r-pass" type="password" autocomplete="new-password" required></div>
+      <div class="auth-field">
+        <label>Username</label>
+        <input id="r-user" autocomplete="username" placeholder="Choose a username" required>
+      </div>
+      <div class="auth-field">
+        <label>Email</label>
+        <input id="r-email" type="email" autocomplete="email" placeholder="your@email.com" required>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input id="r-pass" type="password" autocomplete="new-password" placeholder="Min. 8 characters" required>
+      </div>
       <div class="auth-err" id="r-err"></div>
-      <button class="btn-auth" type="submit" id="r-btn">Register</button>
+      <button class="btn-auth" type="submit" id="r-btn">Create Account →</button>
     </form>
+
+    <div class="auth-footer">
+      Real SpiNNaker2 hardware · Technical University of Munich
+    </div>
   </div>
 </div>
 
