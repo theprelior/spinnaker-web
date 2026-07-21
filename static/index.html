@@ -123,6 +123,7 @@ header{
   padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;transition:.15s
 }
 .h-btn:hover{border-color:var(--muted);color:var(--text)}
+.h-btn.notif-on{border-color:var(--blue);color:var(--blue)}
 
 .workspace{flex:1;display:flex;min-height:0}
 
@@ -768,6 +769,7 @@ header{
     <div class="h-user">Hello, <span id="h-username">—</span></div>
     <button class="h-btn" id="btn-admin" onclick="openAdminPanel()" style="display:none;color:var(--yellow);border-color:var(--yellow)">⚙ Admin</button>
     <button class="h-btn" onclick="openHelpModal()" title="Help">? Help</button>
+    <button class="h-btn" id="btn-notif" onclick="toggleNotifications()" title="Job notifications" style="font-size:14px;padding:4px 8px">🔕</button>
     <button class="h-btn" id="btn-theme" onclick="toggleTheme()" title="Toggle light/dark mode" style="font-size:14px;padding:4px 8px">☾</button>
     <button class="h-btn" onclick="logout()">Sign Out</button>
   </header>
@@ -961,6 +963,7 @@ async function enterApp() {
   startQueuePolling();
   refreshQuota();
   loadUserStats();
+  updateNotifBtn();
   checkSharedCode();
 }
 
@@ -1180,12 +1183,15 @@ async function refreshJobStatus(job_id) {
     document.getElementById('btn-dl').disabled   = false;
     document.getElementById('btn-view').disabled = false;
     showToast(`Job completed${elapsed ? ' in ' + elapsed : ''} ✓`, 'success');
+    sendJobNotification('done', elapsed);
   } else if (s === 'timeout') {
     setJobStatus('timeout', 'Timed Out');
     showToast('Job timed out', 'error');
+    sendJobNotification('timeout');
   } else {
     setJobStatus('failed', 'Failed');
     showToast('Job failed', 'error');
+    sendJobNotification('failed');
   }
   resetRunBtn();
   refreshQuota();
@@ -1709,6 +1715,62 @@ function toggleTheme() {
     });
   }
 })();
+
+// ── Browser notifications ──────────────────────────────────────────────────
+let notifEnabled = localStorage.getItem('s2-notif') === '1';
+
+function updateNotifBtn() {
+  const btn = document.getElementById('btn-notif');
+  if (!btn) return;
+  if (!('Notification' in window)) { btn.style.display = 'none'; return; }
+  btn.textContent = notifEnabled ? '🔔' : '🔕';
+  btn.classList.toggle('notif-on', notifEnabled);
+  btn.title = notifEnabled ? 'Job notifications on' : 'Job notifications off';
+}
+
+async function toggleNotifications() {
+  if (!('Notification' in window)) {
+    showToast('Browser does not support notifications', 'error');
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    showToast('Notifications blocked — allow them in browser settings', 'error');
+    return;
+  }
+  if (!notifEnabled) {
+    if (Notification.permission !== 'granted') {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') { showToast('Notification permission denied', 'error'); return; }
+    }
+    notifEnabled = true;
+    localStorage.setItem('s2-notif', '1');
+    showToast('Job notifications enabled', 'success');
+  } else {
+    notifEnabled = false;
+    localStorage.setItem('s2-notif', '0');
+    showToast('Notifications disabled', 'info');
+  }
+  updateNotifBtn();
+}
+
+function sendJobNotification(status, elapsed) {
+  if (!notifEnabled || Notification.permission !== 'granted') return;
+  if (document.visibilityState === 'visible') return;
+  const cfg = {
+    done:    { title: 'Job completed',  body: elapsed ? `Finished in ${elapsed}` : 'Your SpiNNaker2 job completed successfully.' },
+    timeout: { title: 'Job timed out',  body: 'Your job was killed after exceeding the time limit.' },
+    failed:  { title: 'Job failed',     body: 'Your SpiNNaker2 job encountered an error.' },
+  };
+  const c = cfg[status];
+  if (!c) return;
+  const n = new Notification(`SpiNNaker2 — ${c.title}`, {
+    body: c.body,
+    tag: 'spinnaker-job',
+    silent: false,
+  });
+  n.onclick = () => { window.focus(); n.close(); };
+  setTimeout(() => n.close(), 8000);
+}
 
 // ── Terminal wrap toggle ────────────────────────────────────────────────────
 let termWrap = true;
