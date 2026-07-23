@@ -542,10 +542,29 @@ async def health():
     return checks
 
 
+async def _slurm_hw_status() -> str:
+    """Return 'online', 'busy', or 'offline' from Slurm node state."""
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "sinfo", "-n", "fedora", "-h", "-o", "%T",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=5.0)
+        state = stdout.decode().strip().lower()
+        if state in ("allocated", "mixed", "completing"):
+            return "busy"
+        if state == "idle":
+            return "online"
+        return "offline"
+    except Exception:
+        return "offline"
+
+
 @app.get("/hardware/ping")
 async def hardware_ping(_: User = Depends(get_current_user)):
-    online = await _tcp_reachable(_MGMT_IP, _MGMT_PORT)
-    return {"online": online, "ip": _MGMT_IP}
+    status = await _slurm_hw_status()
+    return {"online": status != "offline", "status": status}
 
 
 # ── Auth config ───────────────────────────────────────────────────────────────
