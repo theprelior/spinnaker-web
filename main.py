@@ -462,6 +462,29 @@ async def get_queue(current_user: User = Depends(get_current_user)):
         else:
             await redis_async.delete("hw_running")  # stale key — self-heal
 
+    # If no web job is tracked, check Slurm directly for SSH admin jobs
+    if not running:
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "squeue", "-h", "-o", "%T|%u|%j",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=3.0)
+            for line in stdout.decode().strip().splitlines():
+                parts = line.split("|")
+                if parts and parts[0].strip() == "RUNNING":
+                    running = {
+                        "job_id":     None,
+                        "username":   parts[1].strip() if len(parts) > 1 else "admin",
+                        "filename":   parts[2].strip() if len(parts) > 2 else "SSH job",
+                        "started_at": None,
+                        "is_mine":    False,
+                    }
+                    break
+        except Exception:
+            pass
+
     queue = []
     for i, jid in enumerate(queue_ids):
         job_data = await redis_async.hgetall(f"job:{jid}")
