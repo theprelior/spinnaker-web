@@ -578,6 +578,18 @@ async def _slurm_hw_status() -> str:
         if state in ("allocated", "mixed", "completing"):
             return "busy"
         if state == "idle":
+            # Catch direct runs that bypass Slurm (e.g. `python script.py`)
+            try:
+                pgrep = await asyncio.create_subprocess_exec(
+                    "pgrep", "-f", "/home/geb/.conda/envs/spinnaker2/bin/python",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.DEVNULL,
+                )
+                pg_out, _ = await asyncio.wait_for(pgrep.communicate(), timeout=3.0)
+                if pg_out.strip():
+                    return "busy"
+            except Exception:
+                pass
             return "online"
         return "offline"
     except Exception:
