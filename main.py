@@ -578,8 +578,9 @@ async def _slurm_hw_status() -> str:
         if state in ("allocated", "mixed", "completing"):
             return "busy"
         if state == "idle":
-            # Catch direct runs that bypass Slurm via lock file
-            if os.path.exists("/tmp/spinnaker.busy"):
+            # Check SpinnmanSession lock files in SPINNAKER_DIR
+            spinnaker_dir = Path(os.getenv("SPINNAKER_DIR", "/mnt/spinnaker"))
+            if any(spinnaker_dir.glob("*.lock")):
                 return "busy"
             return "online"
         return "offline"
