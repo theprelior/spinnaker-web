@@ -743,7 +743,7 @@ async def admin_kill_job(job_id: str, _: User = Depends(_require_admin)):
 
 
 def _capture_env_info_sync() -> dict:
-    """Capture spinnaker2fresh conda env metadata (runs in thread executor)."""
+    """Capture spinnaker2new conda env metadata (runs in thread executor)."""
     python = os.getenv("SPINNAKER_PYTHON", sys.executable)
     info: dict = {"executable": python, "captured_at": datetime.utcnow().isoformat()}
 

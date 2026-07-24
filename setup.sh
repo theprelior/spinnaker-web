@@ -72,12 +72,12 @@ else
     info ".env already exists — skipping."
 fi
 
-# Detect conda spinnaker2fresh env
+# Detect conda spinnaker2new env
 CONDA_PYTHON=""
 for p in \
-    "$HOME/miniconda3/envs/spinnaker2fresh/bin/python3" \
-    "$HOME/anaconda3/envs/spinnaker2fresh/bin/python3" \
-    "/opt/conda/envs/spinnaker2fresh/bin/python3"; do
+    "$HOME/miniconda3/envs/spinnaker2new/bin/python3" \
+    "$HOME/anaconda3/envs/spinnaker2new/bin/python3" \
+    "/opt/conda/envs/spinnaker2new/bin/python3"; do
     [ -f "$p" ] && CONDA_PYTHON="$p" && break
 done
 
@@ -89,7 +89,7 @@ if [ -n "$CONDA_PYTHON" ]; then
     fi
     info "SpiNNaker2 conda Python: $CONDA_PYTHON"
 else
-    warn "conda env 'spinnaker2fresh' not found — scripts will use system Python."
+    warn "conda env 'spinnaker2new' not found — scripts will use system Python."
 fi
 
 # .env → /etc/spinnaker-web.env (SELinux uyumlu konum)
