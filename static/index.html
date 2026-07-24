@@ -909,7 +909,11 @@ async function doLogin(e) {
                              password: document.getElementById('l-pass').value }),
     });
     const data = await res.json();
-    if (!res.ok) { document.getElementById('l-err').textContent = data.detail; return; }
+    if (!res.ok) {
+      const msg = Array.isArray(data.detail) ? data.detail[0]?.msg || 'Validation error' : data.detail;
+      document.getElementById('l-err').textContent = msg;
+      return;
+    }
     token = data.access_token;
     localStorage.setItem('token', token);
     await enterApp();
@@ -933,7 +937,11 @@ async function doRegister(e) {
       }),
     });
     const data = await res.json();
-    if (!res.ok) { document.getElementById('r-err').textContent = data.detail; return; }
+    if (!res.ok) {
+      const msg = Array.isArray(data.detail) ? data.detail[0]?.msg || 'Validation error' : data.detail;
+      document.getElementById('r-err').textContent = msg;
+      return;
+    }
     token = data.access_token;
     localStorage.setItem('token', token);
     await enterApp();
