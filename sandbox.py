@@ -31,7 +31,7 @@ WALL_TIMEOUT = CPU_SECONDS + 30
 # Conda ortamının Python'u — .env'de SPINNAKER_PYTHON ile ayarlanır
 _PYTHON = os.getenv("SPINNAKER_PYTHON", sys.executable)
 
-_conda_env = os.path.dirname(os.path.dirname(_PYTHON))   # .../envs/spinnaker2
+_conda_env = os.path.dirname(os.path.dirname(_PYTHON))   # .../envs/spinnaker2fresh
 _conda_bin = os.path.join(_conda_env, "bin")
 
 _spinnaker_dir = os.getenv("SPINNAKER_DIR", "/mnt/spinnaker")

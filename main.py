@@ -578,18 +578,9 @@ async def _slurm_hw_status() -> str:
         if state in ("allocated", "mixed", "completing"):
             return "busy"
         if state == "idle":
-            # Catch direct runs that bypass Slurm (e.g. `python script.py`)
-            try:
-                pgrep = await asyncio.create_subprocess_exec(
-                    "pgrep", "-f", "/home/geb/.conda/envs/spinnaker2/bin/python",
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.DEVNULL,
-                )
-                pg_out, _ = await asyncio.wait_for(pgrep.communicate(), timeout=3.0)
-                if pg_out.strip():
-                    return "busy"
-            except Exception:
-                pass
+            # Catch direct runs that bypass Slurm via lock file
+            if os.path.exists("/tmp/spinnaker.busy"):
+                return "busy"
             return "online"
         return "offline"
     except Exception:
@@ -750,7 +741,7 @@ async def admin_kill_job(job_id: str, _: User = Depends(_require_admin)):
 
 
 def _capture_env_info_sync() -> dict:
-    """Capture spinnaker2 conda env metadata (runs in thread executor)."""
+    """Capture spinnaker2fresh conda env metadata (runs in thread executor)."""
     python = os.getenv("SPINNAKER_PYTHON", sys.executable)
     info: dict = {"executable": python, "captured_at": datetime.utcnow().isoformat()}
 
