@@ -578,9 +578,10 @@ async def _slurm_hw_status() -> str:
         if state in ("allocated", "mixed", "completing"):
             return "busy"
         if state == "idle":
-            # Check SpinnmanSession lock files in SPINNAKER_DIR
+            # SpinnmanSession creates /mnt/spinnaker/locks/<board_ip>.lock
+            board_ip = os.getenv("S2_IP48", "192.168.1.17")
             spinnaker_dir = Path(os.getenv("SPINNAKER_DIR", "/mnt/spinnaker"))
-            if any(spinnaker_dir.glob("*.lock")):
+            if (spinnaker_dir / "locks" / f"{board_ip}.lock").exists():
                 return "busy"
             return "online"
         return "offline"
